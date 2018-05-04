@@ -1,0 +1,61 @@
+	Dim PTCache As PivotCache
+    Dim PT As PivotTable
+    Dim pvtFld As PivotField
+    Dim strPvtFld As String
+    
+    Application.ScreenUpdating = False
+    
+    'Cancello il foglio pivot se esiste
+    On Error Resume Next
+        Application.DisplayAlerts = False
+        Sheets("Pivot").Delete
+    On Error GoTo 0
+    
+    'Creo la cache x la pivot
+    Set PTCache = ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:=Worksheets("RV_Anno").Range("A1").CurrentRegion.Address)
+    
+    'Aggiungo un nuovo foglio
+    Worksheets.Add
+    ActiveSheet.Name = "Pivot"
+    ActiveWindow.DisplayGridlines = False
+    
+    'Creo la pivot dalla Cache
+    Set PT = ActiveSheet.PivotTables.Add(PivotCache:=PTCache, TableDestination:=Range("A1"), TableName:="PivotVendite")
+    
+    With PT
+        .PivotFields("Mondo_").Orientation = xlRowField
+        .PivotFields("Settore_").Orientation = xlRowField
+        .PivotFields("Reparto_").Orientation = xlRowField
+        .PivotFields("Famiglia_").Orientation = xlRowField
+        .PivotFields("Sottofamiglia_").Orientation = xlRowField
+        .PivotFields("Sede_").Orientation = xlRowField
+        
+        .PivotFields("Venduto_AP_").Orientation = xlDataField
+        .PivotFields("Venduto_AC_").Orientation = xlDataField
+        .CalculatedFields.Add "Delta_V._", "=Venduto_AC_ - Venduto_AP_"
+        .PivotFields("Delta_V._").Orientation = xlDataField
+        .CalculatedFields.Add "Delta_V.%_", "=if(Venduto_AP_=0,0,(Venduto_AC_-Venduto_AP_)/Venduto_AP_)", True
+        .PivotFields("Delta_V.%_").Orientation = xlDataField
+        
+        .PivotFields("Pezzi_AP_").Orientation = xlDataField
+        .PivotFields("Pezzi_AC_").Orientation = xlDataField
+        .CalculatedFields.Add "Delta_P._", "=Pezzi_AC_ - Pezzi_AP_"
+        .PivotFields("Delta_P._").Orientation = xlDataField
+        .CalculatedFields.Add "Delta_P.%_", "=if(Pezzi_AP_=0,0,(Pezzi_AC_-Pezzi_AP_)/Pezzi_AP_)", True
+        .PivotFields("Delta_P.%_").Orientation = xlDataField
+        
+        .DataBodyRange.NumberFormat = "#,##0.00;[Red]-#,##0.00"
+        
+        .DataFields(1).Name = "Venduto AP"
+        .DataFields(2).Name = "Venduto AC"
+        .DataFields(3).Name = "Delta V."
+        .DataFields(4).Name = "Delta V.%"
+        
+        .DataFields(5).Name = "Pezzi AP"
+        .DataFields(6).Name = "Pezzi AC"
+        .DataFields(7).Name = "Delta P."
+        .DataFields(8).Name = "Delta P.%"
+        
+        .DataFields(4).NumberFormat = "0.00%;[Red]-0.00%"
+        .DataFields(8).NumberFormat = "0.00%;[Red]-0.00%"
+    End With

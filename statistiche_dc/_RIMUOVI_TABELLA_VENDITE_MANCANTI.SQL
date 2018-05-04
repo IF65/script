@@ -1,0 +1,1 @@
+drop table if exists ncr.vendite_mancanti;

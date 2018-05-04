@@ -1,0 +1,107 @@
+Public Sub Crea_PM()
+
+    Dim i As Long
+    
+    Dim ar_category(8) As String
+    ar_category(0) = "CAMPO PIERO"
+    ar_category(1) = "FEDRIGO DANIELE"
+    ar_category(2) = "GOGNA LUCA"
+    ar_category(3) = "GUIDI SERGIO"
+    ar_category(4) = "PANIGHETTI PAOLA"
+    ar_category(5) = "PIROVANO NICOLA"
+    ar_category(6) = "TONINI MICHELA"
+    ar_category(7) = "TRAININI UMBERTO"
+    
+    Dim ar_marche0(5) As String
+    ar_marche0(0) = "ESTENDO"
+    ar_marche0(1) = "MOVEBOX"
+    ar_marche0(2) = "REGALONE"
+    ar_marche0(3) = "EMOZIONE3"
+    ar_marche0(4) = "SMARTBOX"
+    
+    Application.StatusBar = "Macro in esecuzione ..."
+    
+    Application.ScreenUpdating = False
+    
+    With Application.ActiveWorkbook.Worksheets("Progress Marche")
+        Columns(1).Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromRightOrBelow
+        .Cells(1, 1).Value2 = "Gruppo"
+        For i = .UsedRange.Rows.Count To 2 Step -1
+            Select Case .Cells(i, 2).Value2
+                Case Is = "FEDRIGO DANIELE"
+                    .Cells(i, 1).Value2 = "Category"
+                Case Is = "GUIDI SERGIO"
+                    .Cells(i, 1).Value2 = "Category"
+                Case Is = "PANIGHETTI PAOLA"
+                    .Cells(i, 1).Value2 = "Category"
+                Case Is = "PIROVANO NICOLA"
+                    .Cells(i, 1).Value2 = "Category"
+                Case Is = "TRAININI UMBERTO"
+                    .Cells(i, 1).Value2 = "Category"
+                Case Else
+                    .Cells(i, 1).Value2 = "Altro"
+            End Select
+        Next i
+
+        For i = .UsedRange.Rows.Count To 2 Step -1
+            If IsInArray(.Cells(i, 2).Value2, ar_category) = False Then
+                .Rows(i).EntireRow.Delete
+            End If
+        Next i
+        
+        If .Cells(1, 28).Value2 <> "Giacenza" Then
+            .Columns(28).Insert Shift:=xlToRight
+            .Columns(27).Copy Destination:=Columns(27)
+        
+            .Cells(1, 28).Value2 = "Giacenza"
+            For i = 2 To .UsedRange.Rows.Count
+                If IsInArray(.Cells(i, 3).Value2, ar_marche0) = True Then
+                    .Cells(i, 28).Value2 = 0
+                End If
+            Next i
+        End If
+        
+        .UsedRange.Sort key1:=.Cells(1, 1), order1:=xlAscending, key2:=.Cells(1, 2), order2:=xlAscending, key3:=Cells(1, 9), order3:=xlDescending, Header:=xlYes
+        .UsedRange.Subtotal GroupBy:=1, Function:=xlSum, TotalList:=Array(5, 6, 8, 9, 10, 11, 13, 14, 16, 18, 27, 28, 30, 31, 33, 34, 36, 37, 42, 43)
+        .UsedRange.Subtotal GroupBy:=2, Function:=xlSum, Replace:=False, TotalList:=Array(5, 6, 8, 9, 10, 11, 13, 14, 16, 18, 27, 28, 30, 31, 33, 34, 36, 37, 42, 43)
+
+        .UsedRange.Columns(5).EntireColumn.Hidden = True
+        .UsedRange.Columns(8).EntireColumn.Hidden = True
+        .UsedRange.Columns(10).EntireColumn.Hidden = True
+        .UsedRange.Columns(13).EntireColumn.Hidden = True
+        .UsedRange.Columns(14).EntireColumn.Hidden = True
+        .UsedRange.Columns(17).EntireColumn.Hidden = True
+
+        .Range(Columns(29), Columns(55)).Group
+        
+        .UsedRange.Cells(2, 7).AutoFill Destination:=Range(Cells(2, 7), Cells(.UsedRange.Rows.Count, 7))
+        .UsedRange.Cells(2, 12).AutoFill Destination:=Range(Cells(2, 12), Cells(.UsedRange.Rows.Count, 12))
+        .UsedRange.Cells(2, 15).AutoFill Destination:=Range(Cells(2, 15), Cells(.UsedRange.Rows.Count, 15))
+        .UsedRange.Cells(2, 17).AutoFill Destination:=Range(Cells(2, 17), Cells(.UsedRange.Rows.Count, 17))
+         For i = 19 To 26
+            .UsedRange.Cells(2, i).AutoFill Destination:=Range(Cells(2, i), Cells(.UsedRange.Rows.Count, i))
+        Next i
+        .UsedRange.Cells(2, 29).AutoFill Destination:=Range(Cells(2, 29), Cells(.UsedRange.Rows.Count, 29))
+        .UsedRange.Cells(2, 32).AutoFill Destination:=Range(Cells(2, 32), Cells(.UsedRange.Rows.Count, 32))
+        .UsedRange.Cells(2, 35).AutoFill Destination:=Range(Cells(2, 35), Cells(.UsedRange.Rows.Count, 35))
+        .UsedRange.Cells(2, 38).AutoFill Destination:=Range(Cells(2, 38), Cells(.UsedRange.Rows.Count, 38))
+        .UsedRange.Cells(2, 44).AutoFill Destination:=Range(Cells(2, 44), Cells(.UsedRange.Rows.Count, 44))
+        
+    End With
+    
+    Application.ScreenUpdating = True
+    
+    Application.StatusBar = "Pronto"
+
+End Sub
+
+ Function IsInArray(FindValue As Variant, arrSearch As Variant) As Boolean
+
+    On Error GoTo LocalError
+    If Not IsArray(arrSearch) Then Exit Function
+    IsInArray = InStr(1, vbNullChar & Join(arrSearch, vbNullChar) & vbNullChar, vbNullChar & FindValue & vbNullChar) > 0
+
+    Exit Function
+LocalError:
+    ' Justin (just in case)
+End Function

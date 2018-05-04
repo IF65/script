@@ -1,0 +1,11 @@
+OSX
+
+etc/paths
+/etc/paths.d
+
+/etc/profile
+~/.bash_profile
+~/.bash_login   (if .bash_profile does not exist)
+~/.profile      (if .bash_login does not exist)
+
+OS X also uses ~/.MacOSX/environment.plist to set more environment variables, including paths if necessary.
