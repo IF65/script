@@ -1,0 +1,129 @@
+#controllo sito web sm
+*/30 * * * * php /script/checkWeb/checkWeb.php
+
+#invio dati ad Epipoli
+00 14 * * 0 /script/import_add_log.sh 
+30 20 * * * /script/import_add_log.sh
+00 23 * * * /script/import_add_log.sh
+00 01 * * * /script/import_add_log.sh
+
+#caricamento PR
+00 19 * * * /script/caricamento_pr.sh
+
+# controllo timbrature x risorse umane
+00 12 * * * /script/testTimbrature.sh 
+
+#elaborazione NCR/Epipoli (coda di trasmissione)
+*/1 * * * * /script/import_ciclo.sh
+
+#invio report (coda di trasmissione)
+*/1 * * * * /script/nf/ciclo_esecuzione_report.sh
+
+#carico i ddt
+*/10 * * * * /script/nf/ricezioneDDT.sh
+
+#carico i ddt provvisori x SMBB B2B
+*/15 * * * * sh /script/copre/caricamentoDdt.sh
+
+#aggiornamento dati
+30 18 * * * /script/update_db.sh
+00 05 * * * /script/update_db.sh
+
+#invio tabelle
+#30 04 * * * /script/tabelle.sh
+
+#tessere sostituite
+00 05 * * * /script/tessere_sostituite.sh
+  
+
+# allineamento archivi.articolo e archivi.prezzi_articolo sulla 76
+00 02 01 * * /it/etl/align_tabs/align_month.sh
+
+# ricezione dati QBerg
+*/5 * * * * /script/QBerg/QBerg.sh
+
+# caricamento file mt x listino usato giochi
+00 * * * * /script/carica_mt.sh
+
+# variazioni tessere dipendenti
+00 04 * * 1,2,3,4,5 /it/report/tessere_dipendenti/variazioni_tessere_zucchetti.sh 
+15 04 * * * /it/report/anagrafica_dipendenti/esporta_anagrafica_zucchetti.sh
+
+#caricamento dati nf
+*/2 * * * * /script/nf/caricamento_anagrafiche.sh
+
+#caricamento journal/anagdafi
+00 04 * * * perl /script/ricezione_dati/ricezione_journal.pl
+00 22 * * * perl /script/ricezione_dati/ricezione_journal.pl
+45 22 * * * perl /script/ricezione_dati/ricezione_cash.pl
+45 21 * * * perl /script/ricezione_dati/ricezione_anagdafi.pl
+30 23 * * * perl /script/ricezione_dati/ricezione_anagdafi.pl
+00 03 * * * /script/anagdafi/carica.sh
+55 23 * * * /script/recupero_angdafi_mancanti.sh
+00 07 * * * /script/cruscotto_email.sh 
+
+#acquisizione fatture da Copre
+00 06 * * * /script/nf/fatture_copre.sh
+00 07 * * * /script/contabilita/aggiornamento.sh
+00 09 * * * /script/nf/fatture_copre.sh
+00 10 * * * /script/contabilita/aggiornamento.sh
+
+30 07 * * * /script/forme_pagamento.sh
+#invio dati gre, copre e mt
+30 04 * * * /script/nf/creazione_giacenze_correnti.sh
+30 05 * * * /script/nf/creazione_situazioni.sh
+30 00 * * * /script/nf/invio_copre.sh
+45 01 * * * /script/nf/invio_gre.sh
+00 06 * * 1 /script/nf/invio_mt.sh 
+
+#invio report estendo
+00 03 * * * /script/nf/estendo_creazione_report.sh
+
+#invio report vendite / marche
+30 07 * * 1 /script/nf/report_vendite_invio.sh
+#30 07 * * 2 /script/nf/report_marche_invio.sh 
+
+#invio report SM Sergio Guidi
+00 12 * * 1 /script/nf/creazione_report_stock.sh
+
+#cruscotto caricamento dati
+30 06 * * * /script/cruscotto.sh
+
+#invio anagrafica Roberto Odolini e Alessandra Omodei
+00 04 05 * * /it/etl/anag_roby/anag_roby.sh
+00 02 02 * * /it/etl/anag_roby/anag_CdG.sh
+# 00 15 * * *  /it/etl/chalco/export_anag_gerarchie_chalco.sh
+
+#invio report nimis mensili
+00 12 * * 2 [ $(date +\%d) -le 07 ] && /script/nimis/report_mensili_invio.sh
+
+#divulgazione a filiali food immagini chalco per bilance
+00 1-21/2 * * * /it/divulgazioni/script/align_balance.sh
+
+#aggiornamento giacenze tabulato copre (spostato su 11.0.1.31)
+*/15 7-22 * * * perl /script/copre/copreAggiornamentoTabulato.pl 
+
+#creazione giornaliera tabulato copre (spostato su 11.0.1.31)
+00 06 * * * perl /script/copre/copreCreazioneTabulato.pl
+
+#invio catalogo B2B
+00 18 * * * sh /script/copre/invioCataloghi.sh
+30 07 *	* * sh /script/copre/invioTEKWORLD.sh
+30 12 *	* * sh /script/copre/invioTEKWORLD.sh
+
+#aggiornamento catalogo B2B (invio ai clienti)
+15,45 * * * * /script/copre/invioAggiornamenti.sh
+
+*/3 7-20 * * * sh /script/copre/ordini_b2b_add_log.sh
+*/1 * * * * /script/copre/ordini_b2b_ciclo.sh
+
+#invio a sage aggiornamento giacenze
+00,30 * * * * sh /script/sage/sageAggiornamentoGiacenze.sh
+
+#invio a sage listino
+45 03 * * * sh /script/sage/sageCreazioneListino.sh
+
+*/15 * * * * sh /script/copre/flussiCopre/caricamento.sh
+
+00 05 * * * sh /script/nf/consolidatiSM.sh
+
