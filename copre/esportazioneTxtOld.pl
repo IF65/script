@@ -13,6 +13,9 @@ use POSIX;
 # date
 #------------------------------------------------------------------------------------------------------------
 my $dataCorrente = DateTime->today(time_zone=>'local');
+my $annoCorrente = $dataCorrente->year();
+my $annoPrecedente = $annoCorrente - 1;
+my $meseCorrente = $dataCorrente->month();
 
 # parametri di collegamento a mysql
 #------------------------------------------------------------------------------------------------------------
@@ -51,7 +54,7 @@ if (&ConnessioneDB) {
 
     for (my $i = 0; $i < @elencoClienti; $i++) {
         if ($sth->execute($elencoClienti[$i], $clienti{$elencoClienti[$i]}{'categoria'}, $elencoClienti[$i])) {
-            
+
             if (open my $fileHandler, "+>:crlf", $mainFolder.'/'.$elencoClienti[$i].$fileName) {
                 if ($elencoClienti[$i] eq 'EPRICE' || $elencoClienti[$i] eq 'ONLINESTORE') {
                     print $fileHandler "Cat\t";
@@ -143,7 +146,7 @@ if (&ConnessioneDB) {
                     print $fileHandler "Link immagine\n";
                 }
                 while (my @record = $sth->fetchrow_array()) {
-                    
+
                     # lettura dei dati
                     # ---------------------------------------------------------------------------------------------------------------------------------------
                     my $codice = $record[0];
@@ -158,8 +161,8 @@ if (&ConnessioneDB) {
                     my $canale = $record[9];
                     my $giacenza = $record[10];
                     my $inOrdine = $record[11];
-                    my $prezzoCliente = $record[12];
-                    my $prezzoNettoCliente = $record[13];
+                    my $prezzoAcquisto = $record[12];
+                    my $ricaricoPercentuale = $record[13]/100;
                     my $prezzoVendita = $record[14];
                     my $pndAC = $record[15]/100;
                     my $pndAP = $record[16]/100;
@@ -169,15 +172,11 @@ if (&ConnessioneDB) {
                     my $ricarico03 = $record[20]/100;
                     my $ricarico04 = $record[21]/100;
                     my $aliquotaIva = $record[22];
-                    my $inPromoDa = string2Date($record[23]);
-                    my $inPromoA = string2Date($record[24]);
-                    if($prezzoNettoCliente != 0) {                  
-                        if ( DateTime->compare( $dataCorrente, $inPromoDa ) >= 0 and DateTime->compare( $dataCorrente, $inPromoA ) <= 0) {
-                           $prezzoCliente = &arrotonda($prezzoNettoCliente);
-                        }
-                    }
 
                     my $prezzoVenditaNoIva = $prezzoVendita*100/(100 + $aliquotaIva);
+                    my $feeCopre = $prezzoAcquisto*$ricaricoPercentuale/(1+$ricaricoPercentuale);
+                    my $prezzoNetNet = $doppioNetto - $doppioNetto*($pndAC+$pndAP) + $feeCopre;
+                    my $prezzoEPrice = $prezzoNetNet + $prezzoNetNet*($ricarico01 + $ricarico02 + $ricarico03 + $ricarico04);
 
         			# scrittura dati
                     # ---------------------------------------------------------------------------------------------------------------------------------------
@@ -189,7 +188,7 @@ if (&ConnessioneDB) {
 						print $fileHandler "$descrizione\t";
 						print $fileHandler "$descrizione\t";
 						print $fileHandler "\t";
-						print $fileHandler sprintf('%.0f',$prezzoCliente*100)."\t";
+						print $fileHandler sprintf('%.0f',&arrotonda($prezzoEPrice)*100)."\t";
 						print $fileHandler sprintf('%.0f',$prezzoVenditaNoIva*100)."\t";
 						print $fileHandler "$aliquotaIva\t";
 						print $fileHandler "$marchio\t";
@@ -211,7 +210,7 @@ if (&ConnessioneDB) {
 						print $fileHandler "$descrizione\t";
 						print $fileHandler "$descrizione\t";
 						print $fileHandler "\t";
-						print $fileHandler sprintf('%.2f',$prezzoCliente)."\t";
+						print $fileHandler sprintf('%.2f',&arrotonda($prezzoEPrice))."\t";
 						print $fileHandler sprintf('%.2f',$prezzoVenditaNoIva)."\t";
 						print $fileHandler "$aliquotaIva\t";
 						print $fileHandler "$marchio\t";
@@ -235,7 +234,7 @@ if (&ConnessioneDB) {
 						print $fileHandler ";";
 
 						my $number;
-						$number = sprintf('%.2f',$prezzoCliente);
+						$number = sprintf('%.2f',&arrotonda($prezzoEPrice));
 						$number =~ s/\./\,/ig;
 						print $fileHandler $number.";";
 
@@ -263,7 +262,7 @@ if (&ConnessioneDB) {
 						print $fileHandler "$descrizione;";
 						print $fileHandler "$descrizione;";
 						print $fileHandler ";";
-						print $fileHandler sprintf('%.2f',$prezzoCliente).";";
+						print $fileHandler sprintf('%.2f',&arrotonda($prezzoEPrice)).";";
 						print $fileHandler sprintf('%.2f',$prezzoVenditaNoIva).";";
 						print $fileHandler "$aliquotaIva;";
 						print $fileHandler "$marchio;";
@@ -285,7 +284,7 @@ if (&ConnessioneDB) {
 						print $fileHandler "$descrizione\t";
 						print $fileHandler "$descrizione\t";
 						print $fileHandler "\t";
-						print $fileHandler sprintf('%.2f',$prezzoCliente)."\t";
+						print $fileHandler sprintf('%.2f',&arrotonda($prezzoEPrice))."\t";
 						print $fileHandler sprintf('%.2f',$prezzoVenditaNoIva)."\t";
 						print $fileHandler "$aliquotaIva\t";
 						print $fileHandler "$marchio\t";
@@ -344,7 +343,7 @@ sub string2Date { #trasformo una data un oggetto DateTime
 	my $giorno = 1;
 	my $mese = 1;
 	my $anno = 1900;
-	if ($data =~ /^(\d{4}).(\d{2}).(\d{2})$/ and $data ne '0000-00-00') {
+	if ($data =~ /^(\d{4}).(\d{2}).(\d{2})$/) {
         $anno = $1*1;
 		$mese = $2*1;
 		$giorno = $3*1;
@@ -382,8 +381,8 @@ sub ConnessioneDB {
                                 t.`canale`,
                                 t.`giacenza`,
                                 t.`inOrdine`,
-                                c.`prezzoCliente`,
-                                c.`prezzoNettoCliente`,
+                                t.`prezzoAcquisto`,
+                                t.`ricaricoPercentuale`,
                                 t.`prezzoVendita`,
                                 t.`pndAC`,
                                 t.`pndAP`,
@@ -392,20 +391,17 @@ sub ConnessioneDB {
                                 c.`ricarico02`,
                                 c.`ricarico03`,
                                 c.`ricarico04`,
-                                t.`aliquotaIva`,
-                                c.`inPromoDa`,
-                                c.`inPromoA`
+                                t.`aliquotaIva`
 								from tabulatoCopre as t join tabulatoCliente as c on t.`codice`=c.`codiceArticolo` join ediel01 as e01 on t.`ediel01`= e01.`codice` join ediel02 as e02 on concat(t.`ediel01`,t.`ediel02`)= e02.`codice` left join ediel03 as e03 on concat(t.`ediel01`,t.`ediel02`,t.`ediel03`)= e03.`codice` left join ediel04 as e04 on concat(t.`ediel01`,t.`ediel02`,t.`ediel03`,t.`ediel04`)= e04.`codice` left join marcheGCC as m on t.`marchio`=m.`codice`
 								where c.`codiceCliente`= ? and
 								(
 									((t.`giacenza`> 1 and t.`canale` = 1 and t.`ordinabile` = 1) or (t.`codice` in (select distinct p.`codiceArticolo` from politicaVendita as p where p.`categoria`= ? and p.`codiceArticolo`<>''))) or
 									(t.`codice` in (select codice from articoliObbligatori))
 								)
-								and t.`doppioNetto`<>0 and t.`marchio` not in ('ASK','BSE','CLL','EXT','GOP','LIE','LOE','MIE','NRD','NTM','SBS','SNS','TRB','EAS','MEP','CAO','BLC','VIT','FAB','ACT','ADI','APO','AQL','ASF','ATT','BKB','BLC','BLR','BLJ','BNM','BOC','BPO','CEL','WEB','WAR','WAM','FOX','NTA') and t.`marchioCopre` not in ('MIELE') and t.`doppioNetto`>= 5.00 and c.`data` = (select max(data) from tabulatoCliente where codiceCliente = ?)  and
-								t.`codice` <> '0702725087' and t.`codice` <> '0205764016' and t.`codice` <> '0212764005' and t.`codice` <> '0910762009' and t.`codice` <> '0208725002' and t.`codice` <> '0702725075' and t.`codice` <> '0702725088' and t.`codice` <> '0205725004' and t.`codice` <> '0205725008' and t.`codice` <> '4277251195' and t.`codice` <> '2212102014' and t.`codice` <> '2210102021' and t.`codice` <> '1305147003' and t.`codice` <> '0205253127' 
+								and t.`doppioNetto`<>0 and t.`marchio` not in ('PLY','ASK','BSE','CLL','EXT','GOP','LIE','LOE','MIE','NRD','NTM','SBS','SNS','TRB','EAS','MEP','CAO','BLC','VIT','FAB','ACT','ADI','APO','AQL','ASF','ATT','BKB','BLC','BLR','BLJ','BNM','BOC','BPO','CEL','WEB','WAR','WAM','FOX','NTA') and t.`marchioCopre` not in ('MIELE') and t.`doppioNetto`>= 5.00 and c.`data` = (select max(data) from tabulatoCliente where codiceCliente = ?) and
+								t.`codice` <> '0702725087' and t.`codice` <> '0205764016' and t.`codice` <> '0212764005' and t.`codice` <> '0910762009' and t.`codice` <> '0208725002' and t.`codice` <> '0702725075' and t.`codice` <> '0702725088' and t.`codice` <> '0205725004' and t.`codice` <> '0205725008' and t.`codice` <> '0910762009' and t.`codice` <> '0212764005' and t.`codice` <> '0205764016' and t.`codice` <> '4277251195' and t.`codice` <> '2212102014' and t.`codice` <> '2210102021' and t.`codice` <> '1305147003' and t.`codice` <> '0205253127' 
 								order by 1;
 							});
 
     return 1;
 }
-

@@ -496,7 +496,7 @@ if (&ConnessioneDB) {
 
                     my $prezzoCliente = &arrotonda($nettoNetto + $nettoNetto*($ricaricoVendita01 + $ricaricoVendita02 + $ricaricoVendita03 + $ricaricoVendita04)/100);
                     if ($doppioNetto > 0.0) {
-                    	$sth_cliente->execute($data, $elencoClienti[$i], $clienti{$elencoClienti[$i]}{'categoria'}, $codice, $doppioNetto, $nettoNetto, $ricaricoVendita01, $ricaricoVendita02, $ricaricoVendita03, $ricaricoVendita04, $prezzoCliente);
+                    	#$sth_cliente->execute($data, $elencoClienti[$i], $clienti{$elencoClienti[$i]}{'categoria'}, $codice, $doppioNetto, $nettoNetto, $ricaricoVendita01, $ricaricoVendita02, $ricaricoVendita03, $ricaricoVendita04, $prezzoCliente);
                     }
                 }
 
@@ -601,21 +601,26 @@ sub ConnessioneDB {
 
     # creazione della table tabulatoCliente
     $dbh->do(qq{
-                CREATE TABLE IF NOT EXISTS `tabulatoCliente` (
-                    `data` date NOT NULL,
-                    `codiceCliente` varchar(20) NOT NULL DEFAULT '',
-                    `categoria` varchar(20) NOT NULL DEFAULT '',
-                    `codiceArticolo` varchar(10) NOT NULL DEFAULT '',
-                    `doppioNetto` float DEFAULT 0,
-                    `nettoNetto` float DEFAULT 0,
-                    `ricarico01` float DEFAULT 0,
-                    `ricarico02` float DEFAULT 0,
-                    `ricarico03` float DEFAULT 0,
-                    `ricarico04` float DEFAULT 0,
-                    `prezzoCliente` float DEFAULT 0,
-                PRIMARY KEY (`data`,`codiceCliente`,`codiceArticolo`)
-              ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-});
+                CREATE TABLE if not exists `tabulatoCliente` (
+					  `data` date NOT NULL,
+					  `codiceCliente` varchar(20) NOT NULL DEFAULT '',
+					  `categoria` varchar(20) NOT NULL,
+					  `codiceArticolo` varchar(10) NOT NULL DEFAULT '',
+					  `doppioNetto` float DEFAULT '0',
+					  `nettoNetto` float DEFAULT '0',
+					  `ricarico01` float DEFAULT '0',
+					  `ricarico02` float DEFAULT '0',
+					  `ricarico03` float DEFAULT '0',
+					  `ricarico04` float DEFAULT '0',
+					  `prezzoCliente` float DEFAULT '0',
+					  `prezzoNettoCliente` float DEFAULT '0',
+					  `inPromoDa` date DEFAULT NULL,
+					  `inPromoA` date DEFAULT NULL,
+					  `codiceArticoloSM` varchar(7) NOT NULL DEFAULT '',
+					  PRIMARY KEY (`data`,`codiceCliente`,`codiceArticolo`),
+					  KEY `codiceCliente` (`codiceCliente`,`codiceArticolo`)
+					) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+				});
 
     # caricamento pnd
     $sth = $dbh->prepare(qq{select concat(marchio,ediel01,ediel02,ediel03), marchio, ediel01, ediel02, ediel03, pndAC, pndAP from pnd order by 1});

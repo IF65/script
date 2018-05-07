@@ -166,8 +166,8 @@ if (&ConnessioneDB) {
                 my $canale = $record[9];
                 my $giacenza = $record[10];
                 my $inOrdine = $record[11];
-                my $prezzoCliente = $record[12];
-                my $prezzoNettoCliente = $record[13];
+                my $prezzoAcquisto = $record[12];
+                my $ricaricoPercentuale = $record[13]/100;
                 my $prezzoVendita = $record[14];
                 my $pndAC = $record[15]/100;
                 my $pndAP = $record[16]/100;
@@ -177,10 +177,11 @@ if (&ConnessioneDB) {
                 my $ricarico03 = $record[20]/100;
                 my $ricarico04 = $record[21]/100;
                 my $aliquotaIva = $record[22];
-                my $inPromoDa = $record[23];
-                my $inPromoA = $record[24];
 
                 my $prezzoVenditaNoIva = $prezzoVendita*100/(100 + $aliquotaIva);
+                my $feeCopre = $prezzoAcquisto*$ricaricoPercentuale/(1+$ricaricoPercentuale);
+                my $prezzoNetNet = $doppioNetto - $doppioNetto*($pndAC+$pndAP) + $feeCopre;
+                my $prezzoEPrice = $prezzoNetNet + $prezzoNetNet*($ricarico01 + $ricarico02 + $ricarico03 + $ricarico04);
 
                 $report->write_string( $riga, 0, $ediel01, $formatEmptyLeft);
                 $report->write_string( $riga, 1, $ediel02, $formatEmptyLeft);
@@ -188,15 +189,12 @@ if (&ConnessioneDB) {
                 $report->write_string( $riga, 3, $modello, $formatEmptyLeft);
                 $report->write_string( $riga, 4, $descrizione, $formatEmptyLeft);
                 $report->write_string( $riga, 5, $descrizione, $formatEmptyLeft);
-                $report->write( $riga, 7, $prezzoCliente, $formatNum2DecimalDigit);
+                $report->write( $riga, 7, &arrotonda($prezzoEPrice), $formatNum2DecimalDigit);
                 $report->write( $riga, 8, $prezzoVenditaNoIva, $formatNum2DecimalDigit);
                 $report->write( $riga, 9, $aliquotaIva, $formatNum2DecimalDigit);
                 $report->write_string( $riga, 10, $marchio, $formatEmptyLeft);
                 $report->write( $riga, 11, $giacenza, $formatNum0DecimalDigit);
                 $report->write( $riga, 12, $inOrdine, $formatNum0DecimalDigit);
-                $report->write( $riga, 14, $prezzoNettoCliente, $formatNum2DecimalDigit);
-                $report->write( $riga, 15, $inPromoDa, $formatEmptyLeft);
-                $report->write( $riga, 16, $inPromoA, $formatEmptyLeft);
                 $report->write_string( $riga, 17, $barcode, $formatEmptyLeft);
 
                 $riga++;
@@ -389,8 +387,8 @@ sub ConnessioneDB {
                                 t.`canale`,
                                 t.`giacenza`,
                                 t.`inOrdine`,
-                                c.`prezzoCliente`,
-                                c.`prezzoNettoCliente`,
+                                t.`prezzoAcquisto`,
+                                t.`ricaricoPercentuale`,
                                 t.`prezzoVendita`,
                                 t.`pndAC`,
                                 t.`pndAP`,
@@ -399,9 +397,7 @@ sub ConnessioneDB {
                                 c.`ricarico02`,
                                 c.`ricarico03`,
                                 c.`ricarico04`,
-                                t.`aliquotaIva`,
-                                c.`inPromoDa`,
-                                c.`inPromoA`
+                                t.`aliquotaIva`
 								from tabulatoCopre as t join tabulatoCliente as c on t.`codice`=c.`codiceArticolo` join ediel01 as e01 on t.`ediel01`= e01.`codice` join ediel02 as e02 on concat(t.`ediel01`,t.`ediel02`)= e02.`codice` left join ediel03 as e03 on concat(t.`ediel01`,t.`ediel02`,t.`ediel03`)= e03.`codice` left join ediel04 as e04 on concat(t.`ediel01`,t.`ediel02`,t.`ediel03`,t.`ediel04`)= e04.`codice` left join marcheGCC as m on t.`marchio`=m.`codice`
 								where c.`codiceCliente`= ? and
 								(

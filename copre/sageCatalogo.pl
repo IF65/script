@@ -35,29 +35,43 @@ unless (-e $folder or mkdir $folder) {die "Impossibile creare la cartella $folde
 #---------------------------------------------------------------------------------------
 my $dbh;
 my $sth;
-my $sth_sage;
+my $sthInsertTabulatoCliente;
 my %codiceCopre = ();
+my %importiCopre = ();
 
 # Connessione al db
 #---------------------------------------------------------------------------------------
 if (&ConnessioneDB()) {
 	if ($sth->execute()) {
-		#if (open my $fileHandler, "+>:crlf", $folder.'/'.'test.txt') {
+#		if (open my $fileHandler, "+>:crlf", $folder.'/'.'test.txt') {
 			while ( my @row = $sth->fetchrow_array() ) {
 				if (exists $codiceCopre{$row[1]}) {
-					$sth_sage->execute($row[0], $codiceCopre{$row[1]}, $row[1], $row[2], $row[3], $row[4], $row[5], $row[6], $row[7]);
-#					print $fileHandler $row[0]."\t";
-# 					print $fileHandler $codiceCopre{$row[1]}."\t";
-# 					print $fileHandler $row[1]."\t";
-# 					print $fileHandler $row[2]."\t";
-# 					print $fileHandler $row[3]."\t";
-# 					print $fileHandler $row[4]."\t";
-# 					print $fileHandler $row[5]."\t";
-# 					print $fileHandler $row[6]."\t";
-# 					print $fileHandler $row[7]."\n";
+					if (exists $importiCopre{$codiceCopre{$row[1]}}) {
+						my $categoria = 'B2B';
+						if ($row[0] eq 'Supermedia' ) {$categoria = 'B2C'};
+						
+#						print $fileHandler $current_date->ymd('-')."\t"; 
+# 						print $fileHandler $row[0]."\t"; # codiceCliente
+# 						print $fileHandler $categoria."\t"; # categoria
+# 	 					print $fileHandler $codiceCopre{$row[1]}."\t";
+# 	 					print $fileHandler $importiCopre{$codiceCopre{$row[1]}}{'doppioNetto'}."\t";
+# 	 					print $fileHandler $importiCopre{$codiceCopre{$row[1]}}{'nettoNetto'}."\t";
+# 	 					print $fileHandler '0'."\t";
+# 						print $fileHandler '0'."\t";
+# 						print $fileHandler '0'."\t";
+# 						print $fileHandler '0'."\t";
+# 	 					print $fileHandler $row[2]."\t"; # prezzoCliente
+# 	 					print $fileHandler $row[4]."\t"; # prezzoNettoCliente
+# 	 					print $fileHandler $row[5]."\t"; # inPromoDa
+# 	 					print $fileHandler $row[6]."\t"; # inPromoA
+# 						print $fileHandler $row[1]."\n"; # codiceArticoloSM
+						
+						$sthInsertTabulatoCliente->execute(	$current_date->ymd('-'), $row[0], $categoria, $codiceCopre{$row[1]}, $importiCopre{$codiceCopre{$row[1]}}{'doppioNetto'},
+															$importiCopre{$codiceCopre{$row[1]}}{'nettoNetto'}, 0,0,0,0,$row[2], $row[4], $row[5], $row[6], $row[1]);
+					}
 				}
 			}
-		#}
+#		}
 	}
 }
  
@@ -71,36 +85,94 @@ sub ConnessioneDB{
 		return 0;
 	}
 
-    # caricamento elenco clienti
+    # caricamento corrispondeza articoli
     $sth = $dbh->prepare(qq{select f.`codice_articolo`, f.`codice_articolo_fornitore` from db_sm.fornitore_articolo as f where f.`codice_fornitore`='FCOPRE' });
     if ($sth->execute()) {
         while (my @row = $sth->fetchrow_array()) {
             $codiceCopre{$row[0]} = $row[1];
         }
     }
-    
-    # creazione della table sageTabulatoCliente
+	
+	# creazione della table tabulatoCopre
     $dbh->do(qq{
-                CREATE TABLE IF NOT EXISTS copre.`sageTabulatoCliente` (
-                    `cliente` varchar(20) NOT NULL DEFAULT '',
-  					`codice` varchar(10) NOT NULL DEFAULT '',
-  					`codiceSM` varchar(7) NOT NULL DEFAULT '',
-  					`prezzoListino` float NOT NULL,
-  					`aliquotaIva` float NOT NULL,
-  					`prezzoNetto` float NOT NULL,
-  					`dataInizio` date NOT NULL,
-  					`dataFine` date NOT NULL,
-  					`barcode` varchar(13) NOT NULL DEFAULT '',
-  				PRIMARY KEY (`cliente`,`codice`)
-				) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+                CREATE TABLE IF NOT EXISTS `tabulatoCopre` (
+                    `idTime` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+                    `codice` varchar(10) NOT NULL DEFAULT '',
+                    `modello` varchar(11) DEFAULT NULL,
+                    `descrizione` varchar(49) DEFAULT NULL,
+                    `giacenza` int(11) DEFAULT NULL,
+                    `inOrdine` int(11) DEFAULT NULL,
+                    `prezzoAcquisto` float DEFAULT NULL,
+                    `prezzoRiordino` float DEFAULT NULL,
+                    `prezzoVendita` float DEFAULT NULL,
+                    `aliquotaIva` int(11) DEFAULT NULL,
+                    `novita` tinyint(11) DEFAULT NULL,
+                    `eliminato` tinyint(11) DEFAULT NULL,
+                    `esclusiva` tinyint(11) DEFAULT NULL,
+                    `barcode` varchar(13) DEFAULT NULL,
+                    `marchioCopre` varchar(15) DEFAULT NULL,
+                    `griglia` varchar(2) DEFAULT NULL,
+                    `grigliaObbligatorio` tinyint(2) DEFAULT NULL,
+                    `ediel01` varchar(2) DEFAULT NULL,
+                    `ediel02` varchar(2) DEFAULT NULL,
+                    `ediel03` varchar(2) DEFAULT NULL,
+                    `ediel04` varchar(2) DEFAULT NULL,
+                    `marchio` varchar(3) DEFAULT NULL,
+                    `ricaricoPercentuale` float DEFAULT NULL,
+                    `doppioNetto` float DEFAULT NULL,
+                    `triploNetto` float DEFAULT NULL,
+                    `nettoNetto` float DEFAULT NULL,
+                    `ordinabile` tinyint(2) DEFAULT NULL,
+                    `canale` int(2) DEFAULT NULL,
+                    `pndAC` float DEFAULT NULL,
+                    `pndAP` float DEFAULT NULL,
+                PRIMARY KEY (`codice`),
+  				KEY `ediel` (`ediel01`,`ediel02`,`ediel03`,`ediel04`),
+  				KEY `marchio` (`marchio`),
+  				KEY `idTime` (`idTime`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
     });
+	
+	# caricamento tabulato copre
+	$sth = $dbh->prepare(qq{select codice, doppioNetto, nettoNetto from tabulatoCopre where doppioNetto <> 0});
+	if ($sth->execute()) {
+        while (my @row = $sth->fetchrow_array()) {
+            $importiCopre{$row[0]} = {'doppioNetto' => $row[1], 'nettoNetto' => $row[2]};
+        }
+    }
     
-    # caricamento della table sageTabulatoCliente cliente
-    $sth_sage = $dbh->prepare(qq{insert into copre.sageTabulatoCliente
-                                        (cliente, codice, codiceSM, prezzoListino, aliquotaIva, prezzoNetto, dataInizio, dataFine, barcode)
-                                    values
-                                        (?,?,?,?,?,?,?,?,?);
-                                });
+    # creazione della table tabulatoCliente
+    $dbh->do(qq{
+                CREATE TABLE if not exists `tabulatoCliente` (
+					  `data` date NOT NULL,
+					  `codiceCliente` varchar(20) NOT NULL DEFAULT '',
+					  `categoria` varchar(20) NOT NULL,
+					  `codiceArticolo` varchar(10) NOT NULL DEFAULT '',
+					  `doppioNetto` float DEFAULT '0',
+					  `nettoNetto` float DEFAULT '0',
+					  `ricarico01` float DEFAULT '0',
+					  `ricarico02` float DEFAULT '0',
+					  `ricarico03` float DEFAULT '0',
+					  `ricarico04` float DEFAULT '0',
+					  `prezzoCliente` float DEFAULT '0',
+					  `prezzoNettoCliente` float DEFAULT '0',
+					  `inPromoDa` date DEFAULT NULL,
+					  `inPromoA` date DEFAULT NULL,
+					  `codiceArticoloSM` varchar(7) NOT NULL DEFAULT '',
+					  PRIMARY KEY (`data`,`codiceCliente`,`codiceArticolo`),
+					  KEY `codiceCliente` (`codiceCliente`,`codiceArticolo`)
+					) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+				});
+    
+    # caricamento della table tabulatoCliente cliente
+    $sthInsertTabulatoCliente = $dbh->prepare(qq{insert into copre.tabulatoCliente
+													(data, codiceCliente, categoria, codiceArticolo, doppioNetto, nettoNetto, ricarico01, ricarico02, ricarico03,
+													 ricarico04, prezzoCliente, prezzoNettoCliente, inPromoDa, inPromoA, codiceArticoloSM)
+												values
+													(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+											});
+	
+	
     
 	$dbh = DBI->connect('dbi:Oracle:',qq{$username_or/$password_or@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=$hostname_or)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=SAGEX3U9)))},"", { ora_session_mode => ORA_SYSDBA }) or die;
 	
