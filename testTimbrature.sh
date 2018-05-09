@@ -12,6 +12,6 @@ then
 	BODY="<html><body>\n<b>Data: $DATA<BR>Elenco file errati: $TEST</b><BR><BR>\n"
 	SUBJECT="SEGNALAZIONE ERRORI FILE TIMBRATURE"
 
-/sendEmail-v1.56/sendEmail -u $SUBJECT -m $BODY -f edp@if65.it -t $ADDRESS -s 10.11.14.234:25
+/sendEmail-v1.56/sendEmail -u $SUBJECT -m $BODY -f edp@if65.it -t $ADDRESS -s 10.11.14.233:25
 
 fi

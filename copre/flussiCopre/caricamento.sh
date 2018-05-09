@@ -9,7 +9,6 @@ PASSWORD='mela'
 DIR_SCRIPT="/script/copre/flussiCopre"
 
 FILE_NAME=$(php $DIR_SCRIPT/aggiornamento.php 2>/dev/null)
-echo $FILE_NAME
 #mysql -u $USERNAME -p$PASSWORD -h $IP < $DIR_SCRIPT/crea.sql 1>/dev/null 2>&1
 mysqlimport -u $USERNAME -p$PASSWORD -h $IP --delete --local "copreFlussi" $FILE_NAME 1>/dev/null 2>&1
 

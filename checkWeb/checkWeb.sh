@@ -8,7 +8,7 @@ PASSWORD='mela'
 #posizione degli script
 DIR_SCRIPT="/script/checkWeb"
 
-ID_CONNESSIONE=$(php $DIR_SCRIPT/checkWeb.php)
+ID_CONNESSIONE=$(php $DIR_SCRIPT/checkWeb.php 2>/dev/null)
 
 STMT="select ts `timeStamp`, funzione `tipo`, errori `# errori`, descrizione from checkWeb.checkLog where idConnessione = (select max(idConnessione) from checkWeb.checkLog)"
 ELENCO_ANOMALIE=$(mysql -u $USERNAME -p$PASSWORD -h $IP -ss -e "$STMT" 2>/dev/null)
