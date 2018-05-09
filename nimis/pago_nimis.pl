@@ -22,7 +22,7 @@ my $periodo = $ARGV[0];
 # date
 #------------------------------------------------------------------------------------------------------------
 my $data_corrente 	= DateTime->now(time_zone=>'local');
-my $data_partenza	= DateTime->new(year=>2017, month=>1,day=> 1);
+my $data_partenza	= DateTime->new(year=>2018, month=>1,day=> 1);
 
 # definizione cartelle/file
 #------------------------------------------------------------------------------------------------------------

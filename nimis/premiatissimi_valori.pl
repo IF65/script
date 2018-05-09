@@ -15,7 +15,7 @@ my $password			= "mela";
 # data di partenza
 #------------------------------------------------------------------------------------------------------------
 my $dataCorrente = DateTime->today();
-my $dataInizio = DateTime->new(year => 2017, month => 1, day => 1);
+my $dataInizio = DateTime->new(year => 2018, month => 1, day => 1);
 
 
 # parametri dei database

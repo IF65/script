@@ -405,7 +405,7 @@ sub ConnessioneDB {
 								from tabulatoCopre as t join tabulatoCliente as c on t.`codice`=c.`codiceArticolo` join ediel01 as e01 on t.`ediel01`= e01.`codice` join ediel02 as e02 on concat(t.`ediel01`,t.`ediel02`)= e02.`codice` left join ediel03 as e03 on concat(t.`ediel01`,t.`ediel02`,t.`ediel03`)= e03.`codice` left join ediel04 as e04 on concat(t.`ediel01`,t.`ediel02`,t.`ediel03`,t.`ediel04`)= e04.`codice` left join marcheGCC as m on t.`marchio`=m.`codice`
 								where c.`codiceCliente`= ? and
 								(
-									((t.`giacenza`> 1 and t.`canale` = 1 and t.`ordinabile` = 1) or (t.`codice` in (select distinct p.`codiceArticolo` from politicaVendita as p where p.`categoria`= ? and p.`codiceArticolo`<>''))) or
+									(((t.`giacenza`> 1 or t.`inOrdine`> 0) and t.`canale` = 1 and t.`ordinabile` = 1) or (t.`codice` in (select distinct p.`codiceArticolo` from politicaVendita as p where p.`categoria`= ? and p.`codiceArticolo`<>''))) or
 									(t.`codice` in (select codice from articoliObbligatori))
 								)
 								and t.`doppioNetto`<>0 and t.`marchio` not in ('ASK','BSE','CLL','EXT','GOP','LIE','LOE','MIE','NRD','NTM','SBS','SNS','TRB','EAS','MEP','CAO','BLC','VIT','FAB','ACT','ADI','APO','AQL','ASF','ATT','BKB','BLC','BLR','BLJ','BNM','BOC','BPO','CEL','WEB','WAR','WAM','FOX','NTA') and t.`marchioCopre` not in ('MIELE') and t.`doppioNetto`>= 5.00 and c.`data` = (select max(data) from tabulatoCliente where codiceCliente = ?)  and
