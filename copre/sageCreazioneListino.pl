@@ -81,6 +81,13 @@ if (&ConnessioneDB) {
                     
                     # scrittura dati
                     # ------------------------------------------------------------------------
+                    
+                    $descrizione1 =~ s/\;/ /ig;
+                    $descrizione2 =~ s/\;/ /ig;
+                    $descrizione3 =~ s/\;/ /ig;
+                    $modello =~ s/\;/ /ig;
+                    $marchio =~ s/\;/ /ig;
+                    
                     print $fileHandler "$marcatore;";
                     print $fileHandler "$codiceSM;";
                     print $fileHandler "$codiceMondo;";
@@ -137,41 +144,36 @@ sub ConnessioneDB {
 		print "Errore durante la connessione al database!\n";
 		return 0;
 	}
-    
-#     $sth = $dbh->prepare(qq{select 'ELE',m.`codice`,m.`codice_mondo`,m.`codice_settore`,m.`codice_reparto`,m.`codice_famiglia`,m.`codice_sottofamiglia`,substr(t.`descrizione`,1,30),substr(t.`descrizione`,31,30),substr(t.`descrizione`,61,30),t.`modello`,t.`marchio`,'',t.`canale`,t.`ediel01`,t.`ediel02`,t.`ediel03`,t.`ediel04`,t.`barcode`,'FCOPRE',t.`codice`,t.`giacenza`,t.`inOrdine`,t.`doppioNetto`,t.`nettoNetto`
-#                             from copre.tabulatoCopre as t left join (select codice_articolo_fornitore,codice_articolo from db_sm.fornitore_articolo where codice_fornitore='FCOPRE') as f on f.codice_articolo_fornitore=t.codice left join db_sm.magazzino as m on m.codice = f.codice_articolo
-#                             where t.`doppioNetto`<>0 and m.codice is not null order by 2;
-# 							});
 							
 	$sth = $dbh->prepare(qq{select 
-	'ELE',
-	m.`codice`,
-	m.`codice_mondo`,
-	m.`codice_settore`,
-	m.`codice_reparto`,
-	m.`codice_famiglia`,
-	m.`codice_sottofamiglia`,
-	substr(case when t.`descrizione`<>'' then t.`descrizione` else m.`descrizione` end,1,30) `descrizione1`,
-	substr(case when t.`descrizione`<>'' then t.`descrizione` else m.`descrizione` end,31,30)`descrizione2`,
-	substr(case when t.`descrizione`<>'' then t.`descrizione` else m.`descrizione` end,61,30)`descrizione3`,
-	case when t.`modello`<>'' then t.`modello` else m.`modello` end `modello`,
-	case when t.`marchio`<>'' then t.`marchio` else m.`linea` end `marchio`,
-	'',
-	case when t.`canale`<>0 then t.`canale` else 0 end `canale`,
-	ifnull(t.`ediel01`,'') `ediel01` ,
-	ifnull(t.`ediel02`,'') `ediel02` ,
-	ifnull(t.`ediel03`,'') `ediel03` ,
-	ifnull(t.`ediel04`,'') `ediel04` ,
-	ifnull(t.`barcode`,'') `barcode`,
-	'FCOPRE',
-	ifnull(t.`codice`,'') `codice`,
-	ifnull(t.`giacenza`,0) `giacenza`,
-	ifnull(t.`inOrdine`,0) `inOrdine`,
-	round(ifnull(t.`doppioNetto`,0),2) `doppioNetto`,
-	round(ifnull(t.`nettoNetto`,0),2) `nettoNetto`
-from db_sm.magazzino as m left join (select codice_articolo_fornitore,codice_articolo from db_sm.fornitore_articolo where codice_fornitore='FCOPRE') as f on f.codice_articolo=m.codice left join  copre.tabulatoCopre as t on t.codice = f.codice_articolo_fornitore
-where m.`eliminato` = 0 and m.`codice_reparto`<> '0177' and m.`codice_famiglia` <> '99'
-order by 2;});
+								'ELE',
+								m.`codice`,
+								m.`codice_mondo`,
+								m.`codice_settore`,
+								m.`codice_reparto`,
+								m.`codice_famiglia`,
+								m.`codice_sottofamiglia`,
+								substr(case when t.`descrizione`<>'' then t.`descrizione` else m.`descrizione` end,1,30) `descrizione1`,
+								substr(case when t.`descrizione`<>'' then t.`descrizione` else m.`descrizione` end,31,30)`descrizione2`,
+								substr(case when t.`descrizione`<>'' then t.`descrizione` else m.`descrizione` end,61,30)`descrizione3`,
+								case when t.`modello`<>'' then t.`modello` else m.`modello` end `modello`,
+								case when t.`marchio`<>'' then t.`marchio` else m.`linea` end `marchio`,
+								'',
+								case when t.`canale`<>0 then case when m.`codice` in ('0688508','0485022') then 1 else t.`canale` end else 0 end `canale`,
+								ifnull(t.`ediel01`,'') `ediel01` ,
+								ifnull(t.`ediel02`,'') `ediel02` ,
+								ifnull(t.`ediel03`,'') `ediel03` ,
+								ifnull(t.`ediel04`,'') `ediel04` ,
+								ifnull(t.`barcode`,'') `barcode`,
+								'FCOPRE',
+								ifnull(t.`codice`,'') `codice`,
+								ifnull(t.`giacenza`,0) `giacenza`,
+								ifnull(t.`inOrdine`,0) `inOrdine`,
+								round(ifnull(t.`doppioNetto`,0),2) `doppioNetto`,
+								round(ifnull(t.`nettoNetto`,0),2) `nettoNetto`
+							from db_sm.magazzino as m left join db_sm.fornitore_articolo as f on f.codice_articolo=m.codice left join  copre.tabulatoCopre as t on t.codice = f.codice_articolo_fornitore
+							where m.`codice_reparto`<> '0177' and m.`codice_famiglia` <> '99' and f.codice_fornitore='FCOPRE'
+							order by 2;});
 		
     return 1;
 }
