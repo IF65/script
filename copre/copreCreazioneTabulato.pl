@@ -31,6 +31,7 @@ my $requestParams = 'user=200507&password=19673&cliente=200507&file=ARTICOLI_S';
 my $dbh;
 my $sth;
 my $sth_cliente;
+my $sth_fornitore_articolo;
 my %pnd;
 my %ricarico;
 my %ricaricoVendita;
@@ -503,8 +504,8 @@ if (&ConnessioneDB) {
                 $sth->execute($timestamp, $codice, $modello, $descrizione, $giacenza, $inOrdine, $prezzoAcquisto, $prezzoRiordino, $prezzoVendita, $aliquotaIva, $novita,
                               $eliminato, $esclusiva, $ean, $marchioCopre, $griglia, $grigliaObbligo, $ediel01, $ediel02, $ediel03, $ediel04,
                               $marchio, $ricaricoPercentuale, $doppioNetto, $triploNetto, $nettoNetto, $ordinabile, $canale, $pndAC, $pndAP);
-
-
+                              
+                $sth_fornitore_articolo->execute();
 
             }
         }
@@ -673,6 +674,12 @@ sub ConnessioneDB {
                                     values
                                         (?,?,?,?,?,?,?,?,?,?,?)
                                 });
+                                
+	# completamento tabella fornitore_articolo
+	$sth_fornitore_articolo = $dbh->prepare(qq{	insert into db_sm.fornitore_articolo 
+												select 'FCOPRE' `codice_fornitore`, t.`codice` `codice_articolo_fornitore`, e.`codice` `codice_articolo` 
+												from copre.tabulatoCopre as t join db_sm.ean as e on t.`barcode`=e.`ean` 
+												where t.`barcode`<>'' and t.eliminato = 0 and e.`codice` not in (select f.`codice_articolo` from db_sm.`fornitore_articolo` as f where f.codice_fornitore = 'FCOPRE') and t.`codice` not in  (select f.`codice_articolo_fornitore` from db_sm.`fornitore_articolo` as f where f.codice_fornitore = 'FCOPRE');});
 
 
     return 1;

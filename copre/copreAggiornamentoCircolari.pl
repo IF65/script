@@ -47,6 +47,11 @@ if (&ConnessioneDB) {
     my $datiRicevuti = $client->POST($requestUrl, $requestParams, {'Content-type' => 'application/x-www-form-urlencoded'})->responseContent;
     my $tabulato = qq{$datiRicevuti};
     
+    #my $file_location = '/circolari.txt';
+    #open(my $file, ">", $file_location) or die $!;
+    #print $file $tabulato;
+    #close $file;    
+    
     if ( $client->responseCode() eq '200' ) {
         my $linea;
         open my $fh, '<:crlf', \$tabulato or die $!;
@@ -55,7 +60,7 @@ if (&ConnessioneDB) {
             $linea = <$fh>;
             $linea =~ s/\n$//ig;
             
-            if ($linea =~ /^(.{10})(\d\d)(\d\d)(\d{4})(.{3})(.)(\d\d)(\d\d)(\d{4})(\d\d)(\d\d)(\d{4})(.{20})(.{15})(.{13})(.)(\d{10})(\d{11})(\d{11})/) {
+            if ($linea =~ /^(.{10})(\d\d)(\d\d)(\d{4})(.{3})(.)(..)(..)(....)(..)(..)(....)(.{20})(.{15})(.{13})(.)(\d{10})(\d{11})(\d{11})/) {
                 
                 my $codice = rtrim($1);
                 my $data = $4.'-'.$3.'-'.$2;
@@ -63,6 +68,10 @@ if (&ConnessioneDB) {
                 my $tipo = $6;
                 my $dataInizio = $9.'-'.$8.'-'.$7;
                 my $dataFine = $12.'-'.$11.'-'.$10;
+                if ($7 eq '  ') {
+                	$dataInizio = $data;
+                	$dataFine = $data;
+                }
                 my $codiceArticoloInterno = $13;
                 my $codiceArticoloCopre = $14;
                 my $barcode = $15;
