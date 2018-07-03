@@ -46,6 +46,7 @@ my $dbh;
 my $sth;
 
 if (&ConnessioneDB) {
+	#push(@giornate_da_inviare, '2018-06-20');
 	if (@giornate_da_inviare>0) {
 		#esportazione righe_vendita
 		$sth = $dbh->prepare(qq{select 	r.`data`,
@@ -144,22 +145,23 @@ if (&ConnessioneDB) {
 		# esportazione giacenze
 		$sth = $dbh->prepare(qq{select
 									'200507',
-									ifnull((select ean.`ean` from `$database_vendite`.ean where ean.`codice`= giac.`codice` order by ean.`ean` limit 1),'2999999999999') `ean`,
+									ifnull((select ean.`ean` from `db_sm`.ean where ean.`codice`= giac.`codice` order by ean.`ean` limit 1),'2999999999999') `ean`,
 									giac.codice, mar.`marca`, mag.`modello`, giac.`giacenza`
-								from
-									(select g.`codice`, sum(g.`giacenza`) `giacenza` from
-										(select `negozio`, max(`data`) as `data` from `$database_vendite`.`giacenze` where `data` <=? group by 1) as gd join `$database_vendite`.`giacenze` as g on gd.`negozio`=g.`negozio` and gd.`data`=g.`data`
-										where g.`negozio` in (select l.`codice_interno` from `$database_vendite`.`$table_log` as l where l.`data` = ?) group by 1 order by 1
-									) as giac join `$database_vendite`.`magazzino` as mag on giac.`codice`= mag.`codice` join `$database_vendite`.`marche` as mar on mag.`linea`=mar.`linea`
+								from	(
+											select codice, sum(giacenza) `giacenza` from (select g.codice, g.negozio, g.giacenza from db_sm.giacenze as g join (select g.`codice`, g.`negozio`, max(g.`data`) `data` 
+											from `db_sm`.giacenze as g where g.data <= ? and g.negozio not in ('SMBB','SMMD') and g.`codice` in (select m.codice from db_sm.magazzino as m where m.`giacenza_bloccata` = 0) group by 1,2) as d on g.codice=d.codice and g.negozio=d.negozio and g.data=d.data
+											order by g.codice) as giacenze group by codice
+										) as giac join `db_sm`.`magazzino` as mag on giac.`codice`= mag.`codice` join `db_sm`.`marche` as mar on mag.`linea`=mar.`linea`
 								where mag.`invio_gre`=1 and mar.`invio_gre`=1
-								having giac.`giacenza`>0});
+								having giac.`giacenza`>0;});
 
 		my $data_invio = $giornate_da_inviare[@giornate_da_inviare-1];
 		$data_invio =~ s/\-//ig;
 
 		my $nome_file = $cartella_invio.'/ST_02147260174_SM_'.$data_invio.'.txt';
 		if (open my $file_handler, "+>:crlf", "/$nome_file") {
-			if ($sth->execute($giornate_da_inviare[@giornate_da_inviare-1],$giornate_da_inviare[@giornate_da_inviare-1])) {
+			if ($sth->execute($giornate_da_inviare[@giornate_da_inviare-1])) {
+				print($giornate_da_inviare[@giornate_da_inviare-1]."\n");
 				while (my @row = $sth->fetchrow_array()) {
 					print $file_handler $current_date->dmy('').' '.substr($current_date->hms(':'), 0, 5).'|';
 					print $file_handler substr($data_invio,6,2).substr($data_invio,4,2).substr($data_invio,0,4)."|";

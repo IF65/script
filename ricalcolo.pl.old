@@ -1,0 +1,317 @@
+#!/usr/bin/perl -w
+use strict;
+
+use DBI;
+use File::HomeDir;
+use Getopt::Long;
+use DateTime;
+use Log::Log4perl;
+
+# parametri database
+#------------------------------------------------------------------------------------------------------------
+my $hostname = '10.11.14.78';
+my $username = 'root';
+my $password = 'mela';
+
+my $db = 'db_sm';
+my $societa = '08';
+
+# date
+#------------------------------------------------------------------------------------------------------------
+my $current_date    = DateTime->now(time_zone=>'local');
+my $starting_date   = $current_date->clone()->truncate(to=>'year');
+my $ending_date     = string2date('2018-06-12');
+my $anno_attivo     = $starting_date->year();
+
+# variabili globali
+#------------------------------------------------------------------------------------------------------------
+my $dbh;
+my $sth;
+
+my $sth_vendite;
+
+my $sth_arrivi;
+my $sth_trasferimenti_in;
+my $sth_trasferimenti_out;
+my $sth_diversi;
+
+my %giacenze;
+my %articoli_bloccati;
+
+# configurazione log
+#------------------------------------------------------------------------------------------------------------
+my $configurazione = q(
+    log4perl.category.if65log            = INFO, Screen
+
+    log4perl.appender.Logfile           = Log::Log4perl::Appender::File
+    log4perl.appender.Logfile.filename  = sub{log_file_name();};
+    log4perl.appender.Logfile.mode      = append
+    log4perl.appender.Logfile.layout    = Log::Log4perl::Layout::PatternLayout
+    log4perl.appender.Logfile.layout.ConversionPattern = [%d] [%p{3}] %m %n
+
+    log4perl.appender.Screen            = Log::Log4perl::Appender::Screen
+    log4perl.appender.Screen.stderr     = 0
+    log4perl.appender.Screen.layout    = Log::Log4perl::Layout::PatternLayout
+    log4perl.appender.Screen.layout.ConversionPattern = [%d] [%p{3}] %m %n
+);
+
+my $local_log_folder = "/log";
+my $log_folder = "$local_log_folder/".substr($current_date->ymd(''),0,6);
+unless (-e $local_log_folder or mkdir $local_log_folder)
+    {die "Impossibile creare la cartella $local_log_folder: $!\n";};
+unless (-e $log_folder or mkdir $log_folder)
+    {die "Impossibile creare la cartella $log_folder: $!\n";};
+
+Log::Log4perl::init( \$configurazione ) or die "configurazione log non riuscita: $!\n";
+my $logger = Log::Log4perl::get_logger("if65log");
+
+$logger->info("-" x 76);
+$logger->info("ricalcolo");
+$logger->info("-" x 76);
+$logger->info("inizio elaborazione");
+$logger->info("");
+
+
+if (&ConnessioneDB) {
+    my $data = $starting_date->clone();
+    while (DateTime->compare($data, $ending_date) <= 0) {
+        my %venduti = ();
+        if ($sth_vendite->execute($data->ymd('-'))) {
+            while(my @row = $sth_vendite->fetchrow_array()) {
+                $venduti{$row[0]} = $row[1];
+            }
+        }
+		foreach my $key (keys %venduti) {
+            if (exists $giacenze{$key}) {
+                $giacenze{$key} -= $venduti{$key}
+            } else {
+                $giacenze{$key} = $venduti{$key}*-1
+            }
+            if (! $giacenze{$key}) {
+                delete $giacenze{$key}
+            }
+        }
+		
+		my %arrivati = ();
+        if ($sth_arrivi->execute($data->ymd('-'))) {
+            while(my @row = $sth_arrivi->fetchrow_array()) {
+                $arrivati{$row[0]} = $row[1];
+            }
+        }
+        foreach my $key (keys %arrivati) {
+            if (exists $giacenze{$key}) {
+                $giacenze{$key} += $arrivati{$key}
+            } else {
+                $giacenze{$key} = $arrivati{$key}
+            }
+            if (! $giacenze{$key}) {
+                delete $giacenze{$key}
+            }
+        }
+		
+		my %trasferiti_in = ();
+        if ($sth_trasferimenti_in->execute($data->ymd('-'))) {
+            while(my @row = $sth_trasferimenti_in->fetchrow_array()) {
+                $trasferiti_in{$row[0]} = $row[1];
+            }
+        }
+        foreach my $key (keys %trasferiti_in) {
+            if (exists $giacenze{$key}) {
+                $giacenze{$key} += $trasferiti_in{$key}
+            } else {
+                $giacenze{$key} = $trasferiti_in{$key}
+            }
+            if (! $giacenze{$key}) {
+                delete $giacenze{$key}
+            }
+        }
+		
+		my %trasferiti_out = ();
+        if ($sth_trasferimenti_out->execute($data->ymd('-'))) {
+            while(my @row = $sth_trasferimenti_out->fetchrow_array()) {
+                $trasferiti_out{$row[0]} = $row[1];
+            }
+        }
+        foreach my $key (keys %trasferiti_out) {
+            if (exists $giacenze{$key}) {
+                $giacenze{$key} -= $trasferiti_out{$key}
+            } else {
+                $giacenze{$key} = $trasferiti_out{$key}*-1
+            }
+            if (! $giacenze{$key}) {
+                delete $giacenze{$key}
+            }
+        }
+        
+        my %diversi = ();
+        if ($sth_diversi->execute($data->ymd('-'))) {
+            while(my @row = $sth_diversi->fetchrow_array()) {
+                $diversi{$row[0]} = $row[1];
+            }
+        }
+        foreach my $key (keys %diversi) {
+            if (exists $giacenze{$key}) {
+                $giacenze{$key} -= $diversi{$key}
+            } else {
+                $giacenze{$key} = $diversi{$key}*-1
+            }
+            if (! $giacenze{$key}) {
+                delete $giacenze{$key}
+            }
+        }
+		
+		$logger->info("giorno ".$data->ymd('-'));
+		$logger->debug("  venduti : ".scalar(keys %venduti));
+		$logger->debug("  arrivati: ".scalar(keys %arrivati));
+		$logger->debug("  trasfer.: ".scalar(keys %trasferiti_in));
+        $logger->debug("  diversi : ".scalar(keys %diversi));
+        $logger->debug("  giacenze: ".scalar(keys %giacenze));
+		
+        $data->add(days => 1);
+    }
+    
+    #if (open my $handler, "+>", File::HomeDir->my_desktop."/test.txt") {
+    #    foreach my $key (keys %giacenze) {
+    #        if ($key =~ /^(\d{7})(.{3,4})$/) {
+    #            my $codice = $1;
+    #            my $negozio = $2;
+    #            my $quantita = $giacenze{$key};
+    #            
+    #            if ($quantita) {
+    #                print $handler "$codice\t$negozio\t$quantita\n";
+    #            }
+    #        }
+    #    }
+    #    close $handler;
+    #}
+    
+    $logger->info("inizio salvataggio table: giacenze_temp");
+    foreach my $key (keys %giacenze) {
+        if ($key =~ /^(\d{7})(.{3,4})$/) {
+            if (! exists $articoli_bloccati{$1}) {
+                my $codice = $1;
+                my $negozio = $2;
+                my $quantita = $giacenze{$key};
+                
+                $sth->execute($codice, $negozio, $quantita) or die "Inserimento fallito";
+            }
+        }
+    }
+    $dbh->commit();
+    $logger->info("salvataggio concluso con successo");
+}
+
+&chiusura_log;
+
+#------------------------------------------------------------------------------------------------------------
+sub ConnessioneDB {
+    my %attributes = (
+							PrintWarn => 0,
+							PrintError => 0,
+							RaiseError => 1,
+							AutoCommit => 0,
+                            HandleError => \&dbi_error_handler,
+							ShowErrorStatement => 1,
+					 );
+    
+    $dbh = DBI->connect("DBI:mysql:mysql:$hostname", $username, $password, \%attributes);
+	if (! $dbh) {
+        &chiusura_log;
+        return 0;
+	}
+    
+    $sth = $dbh->prepare(qq{select concat(g.`codice`,g.`negozio`), g.`giacenza`
+                            from $db.`giacenze_iniziali` as g 
+                            where g.`anno_attivo` = ?});
+    if ($sth->execute($anno_attivo)) {
+        while(my @row = $sth->fetchrow_array()) {
+            $giacenze{$row[0]} = $row[1];
+        }
+    }
+    $sth->finish();
+    
+    $sth = $dbh->prepare(qq{select m.`codice` from $db.`magazzino` as m  where m.`giacenza_bloccata` = 1});
+    if ($sth->execute()) {
+        while(my @row = $sth->fetchrow_array()) {
+            $articoli_bloccati{$row[0]} = 1;
+        }
+    }
+    $sth->finish();
+    
+    $sth_vendite = $dbh->prepare(qq{select concat(r.`codice`, r.`negozio`), sum(r.`quantita`)
+                                    from $db.`righe_vendita` as r
+                                    where r.`data` = ?
+                                    group by 1}
+                                );
+	
+	$sth_arrivi = $dbh->prepare(qq{	select concat(r.`codice_articolo`,a.`negozio`),sum(r.`quantita`)
+									from $db.`arrivi` as a join $db.`righe_arrivi` as r on a.`id`=r.`id_arrivi`
+									where a.`data_arrivo` = ?
+									group by 1}
+								);
+    
+	$sth_trasferimenti_in = $dbh->prepare(qq{	select concat(r.`codice`,t.`negozio_arrivo`),sum(r.`quantita`)
+												from $db.`trasferimenti_in` as t join $db.`righe_trasferimenti_in` as r on t.`link`=r.`link_trasferimento`
+												where t.`data` = ?
+												group by 1}
+                                            );
+	
+	$sth_trasferimenti_out = $dbh->prepare(qq{	select concat(r.`codice`,t.`negozio_partenza`),sum(r.`quantita`)
+												from $db.`trasferimenti_out` as t join $db.`righe_trasferimenti_out` as r on t.`link`=r.`link_trasferimento`
+												where t.`data` = ?
+												group by 1}
+                                            );
+	
+	$sth_diversi = $dbh->prepare(qq{select concat(r.`codice`,d.`negozio`),sum(r.`quantita`)
+                                    from $db.`diversi` as d join $db.`righe_diversi` as r on d.`link`=r.`link_diversi`
+                                    where d.`data`= ?
+                                    group by 1}
+                                );
+    
+    $dbh->do(qq{drop table if exists $db.`giacenze_test`}); 
+	
+    $dbh->do(qq{create table $db.`giacenze_test` (  `codice` varchar(7) not null default '',
+                                                    `negozio` varchar(4) not null default '',
+                                                    `giacenza` float not null default '0',
+                                                     primary key (`codice`,`negozio`)
+                                                 ) ENGINE=InnoDB DEFAULT CHARSET=latin1}
+            );
+    
+    $sth = $dbh->prepare(qq{insert into $db.`giacenze_test` (`codice`, `negozio`, `giacenza`) values (?,?,?)});
+    
+    return 1;
+}
+
+sub dbi_error_handler { 
+	my($message, $handle, $first_value) = @_;
+
+	foreach	($message =~ m/(.{1,74})/g) {$logger->fatal($_)}
+
+	return 1;
+}
+
+sub log_file_name {
+    return "$log_folder/".$current_date->ymd('')."_ricalcolo.log";
+}
+
+sub chiusura_log {
+    $logger->info("");
+    $logger->info("fine elaborazione");
+    $logger->info("-" x 76);
+    $logger->info("");
+};
+
+sub string2date { #trasformo una data un oggetto DateTime
+	my ($data) = @_;
+	
+	my $giorno = 1;
+	my $mese = 1;
+	my $anno = 1900;
+	if ($data =~ /^(\d{4}).(\d{2}).(\d{2})$/) {
+        $anno = $1*1;
+		$mese = $2*1;
+		$giorno = $3*1;
+    }
+    
+	return DateTime->new(year=>$anno, month=>$mese, day=>$giorno);
+}

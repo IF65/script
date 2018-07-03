@@ -500,26 +500,23 @@ sub _creazione_db {
 
 		$logger->info("creazione dei record della tabella `$db_lavori`.`$tb_lavori_negozi`");
 		$dbh->do(qq{
-					insert ignore 
-					into `$db_lavori`.`$tb_lavori_negozi`
 					select	n.codice `negozio_codice`, 
-							n.negozio_descrizione, 
-							s.`lavoro_codice`, 
-							l.`lavoro_descrizione`, 
-							case when l.`data_inizio`<=n.data_inizio then n.data_inizio else l.`data_inizio` end as `data_inizio`,
-							case when l.`data_fine` is null and n.data_fine is null then null else 
-								case when ifnull(l.`data_fine`,'2099-12-31')<=ifnull(n.data_fine,'2099-12-31') then 
-									ifnull(l.`data_fine`,'2099-12-31')
-								else 
-									ifnull(n.data_fine,'2099-12-31') 
-								end
-							end as `data_fine`,
-							n.abilita `attivo`
-							from `$db_lavori`.`$tb_lavori_societa` as s join (select n.societa, n.codice, n.negozio_descrizione, n.data_inizio, data_fine, n.abilita from `$db_archivi`.`$tb_negozi` as n) as n on n.societa=s.societa_codice 
-							join `$db_lavori`.`$tb_lavori` as l on l.`lavoro_codice`=s.`lavoro_codice`
-							having (`data_fine` is null or `data_fine`>=`data_inizio`) and `data_inizio`<=current_date()
-							order by 1,3;
-					})
+						n.negozio_descrizione, 
+						s.`lavoro_codice`, 
+						l.`lavoro_descrizione`, 
+						case when l.`data_inizio`<=n.data_inizio then n.data_inizio else l.`data_inizio` end as `data_inizio`,
+						case when l.`data_fine` is null and n.data_fine is null then null else 
+							case when ifnull(l.`data_fine`,'2099-12-31')<=ifnull(n.data_fine,'2099-12-31') then 
+								ifnull(l.`data_fine`,'2099-12-31')
+							else 
+								ifnull(n.data_fine,'2099-12-31') 
+							end
+						end as `data_fine`,
+						n.abilita `attivo`
+					from `lavori`.`lavori_societa` as s join (select n.societa, n.codice, n.negozio_descrizione, n.data_inizio, data_fine, n.abilita, n.invio_dati_gre, n.invio_dati_copre, n.invio_giacenze_copre, n.invio_giacenze_gre from `archivi`.`negozi` as n) as n on n.societa=s.societa_codice join `lavori`.`lavori` as l on l.`lavoro_codice`=s.`lavoro_codice`
+					where (n.societa = '08' and s.`lavoro_codice` = 200 and  n.invio_dati_copre=1) or (n.societa = '08' and s.`lavoro_codice` = 210 and  n.invio_dati_gre=1) or (n.societa = '08' and s.`lavoro_codice` = 220 and  n.invio_giacenze_copre=1) or (n.societa = '08' and s.`lavoro_codice` = 230 and  n.invio_giacenze_gre=1) or (s.`lavoro_codice` not in (200,210,220,230))
+					having (`data_fine` is null or `data_fine`>=`data_inizio`) and `data_inizio`<=current_date()
+					order by 1,3;})
 		or return 0;
 		
 		$logger->info("update dei record `$db_lavori`.`$tb_lavori_negozi`");

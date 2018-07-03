@@ -27,10 +27,11 @@ if [ ! -e "/CARICAMENTO_NF_IN_CORSO" ]; then
 		#creo le cartelle
 		mkdir -p $DIR_FILE_DA_CARICARE
 		mkdir -p $DIR_FILE_CARICATI
+		
+		rm -f $DIR_FILE_DA_CARICARE/*_STO_* > /dev/null 2>&1
 
 		#creo il database se non esiste
-		mysql -u $USERNAME -p$PASSWORD -h $IP < /script/nf/creazione_db.sql 
-		#mysql -u $USERNAME -p$PASSWORD -h $IP -e "set @DB:=$DB; source /script/nf/creazione_db_new.sql ;"
+		mysql -u $USERNAME -p$PASSWORD -h $IP < /script/nf/creazione_db.sql
 
 		#caricamento magazzino
 		NOME_FILE='magazzino.txt'
@@ -207,22 +208,30 @@ if [ ! -e "/CARICAMENTO_NF_IN_CORSO" ]; then
 		NOME_FILE='righe_vendita.txt'
 		#carico solo i file che hanno il file di controllo
 		for f in $(cd $DIR_FILE_DA_CARICARE;ls -1 "$SOCIETA"_RVE* 2>/dev/null | grep -vE "\."); do
+			CHIUSURA_NEGOZIO=${f:7:4}
+			if [ "${CHIUSURA_NEGOZIO:3:1}" == "_" ]; then
+				CHIUSURA_NEGOZIO=${f:7:3}
+				CHIUSURA_DATA=${f:11:4}-${f:15:2}-${f:17:2}
+			else
+				CHIUSURA_DATA=${f:12:4}-${f:16:2}-${f:18:2}
+			fi
+			
 			if [ -s $DIR_FILE_DA_CARICARE/$f.gz ]; then
 				gzip -dc $DIR_FILE_DA_CARICARE/$f.gz > $DIR_FILE_DA_CARICARE/$NOME_FILE
 				mysqlimport -u $USERNAME -p$PASSWORD --ignore --local $DB $DIR_FILE_DA_CARICARE/$NOME_FILE > /dev/null 2>&1
 				rm -f $DIR_FILE_DA_CARICARE/$NOME_FILE
-			else
-				CHIUSURA_NEGOZIO=${f:7:4}
-				if [ "${CHIUSURA_NEGOZIO:3:1}" == "_" ]; then
-					CHIUSURA_NEGOZIO=${f:7:3}
-					CHIUSURA_DATA=${f:11:4}-${f:15:2}-${f:17:2}
-				else
-					CHIUSURA_DATA=${f:12:4}-${f:16:2}-${f:18:2}
-				fi
 				
+				mysql -u $USERNAME -p$PASSWORD -h $IP -ss -e \
+					"insert ignore into $DB.logCaricamento (sede,data,tipo,descrizione,vuoto) \
+					 values('$CHIUSURA_NEGOZIO','$CHIUSURA_DATA','RVE','RIGHE VENDITA',0)" #> /dev/null 2>&1
+			else
 				mysql -u $USERNAME -p$PASSWORD -h $IP -ss -e \
 					"insert ignore into $DB.scontrini (id_scontrino,negozio,data,ora,numero,numero_upb,scontrino_non_fiscale,carta,totale,ip) \
 					 values('$CHIUSURA_NEGOZIO"_"$CHIUSURA_DATA','$CHIUSURA_NEGOZIO','$CHIUSURA_DATA','00:00:00',999999,999999,1,'',0,'')" > /dev/null 2>&1
+					 
+				mysql -u $USERNAME -p$PASSWORD -h $IP -ss -e \
+					"insert ignore into $DB.logCaricamento (sede,data,tipo,descrizione,vuoto) \
+					 values('$CHIUSURA_NEGOZIO','$CHIUSURA_DATA','RVE','RIGHE VENDITA',1)" > /dev/null 2>&1
 			fi
 			mv $DIR_FILE_DA_CARICARE/$f.gz $DIR_FILE_CARICATI/$f.gz
 			rm -f $DIR_FILE_DA_CARICARE/$f
@@ -259,29 +268,6 @@ if [ ! -e "/CARICAMENTO_NF_IN_CORSO" ]; then
 			rm -f $DIR_FILE_DA_CARICARE/$NOME_FILE
 			mv $DIR_FILE_DA_CARICARE/$f.gz $DIR_FILE_CARICATI/$f.gz
 			rm -f $DIR_FILE_DA_CARICARE/$f
-		done
-
-		#caricamento stock
-		NOME_FILE='temp_stock.txt'
-		#carico solo i file che hanno il file di controllo
-		for f in $(cd $DIR_FILE_DA_CARICARE;ls -1 "$SOCIETA"_STO* 2>/dev/null | grep -vE "\." | sort); do
-			gzip -dc $DIR_FILE_DA_CARICARE/$f.gz > $DIR_FILE_DA_CARICARE/$NOME_FILE
-			
-			mysql -u $USERNAME -p$PASSWORD -ss -e "create table if not exists $DB.temp_stock like $DB.giacenze;"  > /dev/null 2>&1
-			mysqlimport -u $USERNAME -p$PASSWORD --delete --local $DB $DIR_FILE_DA_CARICARE/$NOME_FILE > /dev/null 2>&1
-			rm -f $DIR_FILE_DA_CARICARE/$NOME_FILE
-			mv $DIR_FILE_DA_CARICARE/$f.gz $DIR_FILE_CARICATI/$f.gz
-			rm -f $DIR_FILE_DA_CARICARE/$f
-			
-			#ora carico i dati elaborandoli dalla tabella temporanea
-			case $SOCIETA in
-				'SM')	mysql -u $USERNAME -p$PASSWORD -h $IP < /script/nf/caricamento_giacenze_sm.sql;;
-				'SP')	DB='db_sp';;
-				'RU')	DB='db_ru';;
-				'EB')	mysql -u $USERNAME -p$PASSWORD -h $IP < /script/nf/caricamento_giacenze_eb.sql;;
-			esac
-			
-			mysql -u root -pmela -ss -e "drop table if exists $DB.temp_stock;" > /dev/null 2>&1
 		done
 	
 		# caricamento arrivi
@@ -630,25 +616,6 @@ if [ ! -e "/CARICAMENTO_NF_IN_CORSO" ]; then
 			#ora, se ne esistono, rimuovo i file più vecchi senza caricarli (non tocco i file a cui manca
 			#il file di controllo)
 			for f in $(cd $DIR_FILE_DA_CARICARE;ls -1 "$SOCIETA"_FAR* 2>/dev/null | grep -vE "\."); do
-				mv $DIR_FILE_DA_CARICARE/$f.gz $DIR_FILE_CARICATI/$f.gz
-				rm -f $DIR_FILE_DA_CARICARE/$f
-			done
-		fi
-
-		#caricamento setup report
-		NOME_FILE='setup_report.txt'
-		f=$(cd $DIR_FILE_DA_CARICARE;ls -1 "$SOCIETA"_SRE* 2>/dev/null | grep -vE "\." | sort -r | head -1)
-		if [ -n "$f" ]; then
-			#carico solo il file più nuovo tra quelli che hanno il file di controllo
-			gzip -dc $DIR_FILE_DA_CARICARE/$f.gz > $DIR_FILE_DA_CARICARE/$NOME_FILE
-			mysqlimport -u $USERNAME -p$PASSWORD --delete --local $DB $DIR_FILE_DA_CARICARE/$NOME_FILE > /dev/null 2>&1
-			rm -f $DIR_FILE_DA_CARICARE/$NOME_FILE
-			mv $DIR_FILE_DA_CARICARE/$f.gz $DIR_FILE_CARICATI/$f.gz
-			rm -f $DIR_FILE_DA_CARICARE/$f
-	
-			#ora, se ne esistono, rimuovo i file più vecchi senza caricarli (non tocco i file a cui manca
-			#il file di controllo)
-			for f in $(cd $DIR_FILE_DA_CARICARE;ls -1 "$SOCIETA"_SRE* 2>/dev/null | grep -vE "\."); do
 				mv $DIR_FILE_DA_CARICARE/$f.gz $DIR_FILE_CARICATI/$f.gz
 				rm -f $DIR_FILE_DA_CARICARE/$f
 			done

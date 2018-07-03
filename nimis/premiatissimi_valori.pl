@@ -72,7 +72,7 @@ $sth_riga->finish();
 
 $sth = $dbh->prepare(qq{select concat(n.societa,' - ',n.societa_descrizione), concat( n.negozio,' - ',n.negozio_descrizione), p.anno_mese, p.codice, r.descrizione, sum(p.venduto_quantita), round(sum(p.venduto_quantita*r.contributo),2),sum(p.venduto_quantita*r.punti) 
 						from catalogo.report as p join (select distinct a.`COD-ART2` `codice`, a.`DES-ART2` `descrizione`, p.`parametro_02`/100 `contributo`, p.`parametro_01` `punti` from archivi.articox2 as a join cm.promozioni as p on a.`COD-ART2`=p.`codice_articolo`
-						where (a.`COD-ART2` like '926%' or a.`COD-ART2` like '938%'or a.`COD-ART2` like '943%') and p.data_fine >= ? and p.data_inizio <= ?) as r on r.codice = p.codice join
+						where substr(a.`COD-ART2`,1,3) in (select `TV-NUMTAB` from `$database_archivi`.tabvarie where `TV-TIPOTAB`='FAMCATAL') and p.data_fine >= ? and p.data_inizio <= ?) as r on r.codice = p.codice join
 						archivi.negozi as n on p.negozio = n.codice
 						where p.anno_mese = ?
 						group by 1,2,3,4 
@@ -210,7 +210,7 @@ sub DBConnection{
 	$sth->finish();
 	
 	# ricerca dei codici degli articoli premio
-	$sth = $dbh->prepare(qq{select distinct a.`COD-ART2` from `$database_archivi`.`$table_articoli` as a where (a.`COD-ART2` like '926%' or a.`COD-ART2` like '938%'or a.`COD-ART2` like '943%') and a.`COD-ART2` <> '9431509' order by 1});
+	$sth = $dbh->prepare(qq{select distinct a.`COD-ART2` from `$database_archivi`.`$table_articoli` as a where substr(a.`COD-ART2`,1,3) in (select `TV-NUMTAB` from `$database_archivi`.tabvarie where `TV-TIPOTAB`='FAMCATAL') and a.`COD-ART2` <> '9431509' order by 1});
 	#$sth = $dbh->prepare(qq{select `codice` from `$database_catalogo`.`$table_premi` where `codice` <> '9431509'});
 	if ($sth->execute()) {
 		while(my @row = $sth->fetchrow_array()) {

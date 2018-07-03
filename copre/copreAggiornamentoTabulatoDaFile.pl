@@ -57,7 +57,7 @@ if (&ConnessioneDB) {
 	close($fh);
 	#die "stop\n";
     #if ( $client->responseCode() eq '200' ) {
-    if ( 1 ) {
+    if ( 0 ) {
         my $linea;
         #open my $fh, '<:crlf', \$tabulato or die $!;
         open my $fh, '<:crlf', $nomeFile or die "can't open $nomeFile: $!";

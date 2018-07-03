@@ -3,6 +3,17 @@
 */
 CREATE DATABASE IF NOT EXISTS `db_sm`;
 
+CREATE TABLE IF NOT EXISTS `db_sm`.`logCaricamento` (
+	`tsCreazione` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`tsModifica` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	`sede` varchar(4) NOT NULL DEFAULT '',
+	`data` date NOT NULL,
+	`tipo` varchar(3) NOT NULL DEFAULT '',
+	`descrizione` varchar(100) NOT NULL DEFAULT '',
+	`vuoto` tinyint(4) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`sede`,`data`,`tipo`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
 CREATE TABLE IF NOT EXISTS `db_sm`.`magazzino` (
 	`codice` varchar(7) NOT NULL DEFAULT '',
 	`codice_mondo` varchar(20) NOT NULL DEFAULT '',
@@ -154,21 +165,21 @@ CREATE TABLE IF NOT EXISTS `db_sm`.`scontrini` (
   KEY `carta` (`carta`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-CREATE TABLE IF NOT EXISTS `db_sm`.`margini` (
+/*CREATE TABLE IF NOT EXISTS `db_sm`.`margini` (
   `progressivo` varchar(36) NOT NULL DEFAULT '',
   `margine` float NOT NULL DEFAULT 0,
   PRIMARY KEY (`progressivo`),
   KEY `progressivo` (`progressivo`,`margine`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;*/
 
-CREATE TABLE IF NOT EXISTS `db_sm`. `giacenze` (
+/*CREATE TABLE IF NOT EXISTS `db_sm`. `giacenze` (
   `codice` varchar(7) NOT NULL DEFAULT '',
   `negozio` varchar(4) NOT NULL DEFAULT '',
   `giacenza` float NOT NULL DEFAULT 0,
   `data` date NOT NULL,
   PRIMARY KEY (`codice`,`negozio`,`data`),
   KEY `data` (`data`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;*/
 
 CREATE TABLE IF NOT EXISTS `db_sm`.`contributi` (
 	`id` varchar(36) NOT NULL DEFAULT '',
@@ -428,16 +439,6 @@ CREATE TABLE IF NOT EXISTS `db_sm`.`ordini_righe_quantita_ventilazione` (
 	PRIMARY KEY (`id_quantita`,`sede`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-CREATE TABLE IF NOT EXISTS `db_sm`.`setup_report` (
-	`id` varchar(36) NOT NULL DEFAULT '',
-	`descrizione` varchar(100) NOT NULL DEFAULT '',
-	`tipo` varchar(3) NOT NULL DEFAULT '',
-	`tipo_descrizione` varchar(40) NOT NULL DEFAULT '',
-	`data_creazione` date NOT NULL DEFAULT '0000-00-00',
-	`ora_creazione` varchar(8) NOT NULL DEFAULT '',
-	`parametri` varchar(3000) NOT NULL DEFAULT ''
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
 /*solo supermedia*/
 CREATE TABLE IF NOT EXISTS `db_sm`.`tabulato_copre` (
 	`codice` varchar(10) NOT NULL DEFAULT '',
@@ -539,6 +540,17 @@ DROP TABLE IF EXISTS `db_sm`.`temp_stock`;
 -----------------------------------------------------------------------------------------
 */
 CREATE DATABASE IF NOT EXISTS `db_sp`;
+
+CREATE TABLE IF NOT EXISTS `db_sp`.`logCaricamento` (
+	`tsCreazione` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`tsModifica` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	`sede` varchar(4) NOT NULL DEFAULT '',
+	`data` date NOT NULL,
+	`tipo` varchar(3) NOT NULL DEFAULT '',
+	`descrizione` varchar(100) NOT NULL DEFAULT '',
+	`vuoto` tinyint(4) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`sede`,`data`,`tipo`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE IF NOT EXISTS `db_sp`.`magazzino` (
 	`codice` varchar(7) NOT NULL DEFAULT '',
@@ -982,6 +994,17 @@ DROP TABLE IF EXISTS `db_sp`.`temp_stock`;
 */
 CREATE DATABASE IF NOT EXISTS `db_ru`;
 
+CREATE TABLE IF NOT EXISTS `db_ru`.`logCaricamento` (
+	`tsCreazione` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`tsModifica` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	`sede` varchar(4) NOT NULL DEFAULT '',
+	`data` date NOT NULL,
+	`tipo` varchar(3) NOT NULL DEFAULT '',
+	`descrizione` varchar(100) NOT NULL DEFAULT '',
+	`vuoto` tinyint(4) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`sede`,`data`,`tipo`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
 CREATE TABLE IF NOT EXISTS `db_ru`.`magazzino` (
 	`codice` varchar(7) NOT NULL DEFAULT '',
 	`codice_mondo` varchar(20) NOT NULL DEFAULT '',
@@ -1422,6 +1445,17 @@ DROP TABLE IF EXISTS `db_ru`.`temp_stock`;
 #ECOBRICO
 #-----------------------------------------------------------------------------------------
 CREATE DATABASE IF NOT EXISTS `db_eb`;
+
+CREATE TABLE IF NOT EXISTS `db_eb`.`logCaricamento` (
+	`tsCreazione` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`tsModifica` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	`sede` varchar(4) NOT NULL DEFAULT '',
+	`data` date NOT NULL,
+	`tipo` varchar(3) NOT NULL DEFAULT '',
+	`descrizione` varchar(100) NOT NULL DEFAULT '',
+	`vuoto` tinyint(4) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`sede`,`data`,`tipo`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE IF NOT EXISTS `db_eb`.`magazzino` (
 	`codice` varchar(7) NOT NULL DEFAULT '',

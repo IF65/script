@@ -11,7 +11,8 @@ mkdir -p $INVIO
 mkdir -p $BKP
 
 #creazione file
-perl /script/nf/export_gre.pl
+#perl /script/nf/export_gre.pl
+php /script/ricalcolo/invioDati.php
 
 #invio ftp
 

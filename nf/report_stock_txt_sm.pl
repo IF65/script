@@ -64,12 +64,11 @@ my %articoli = ();
 my %negozi = ();
 
 if ($selettore_report eq 'SAMSUNG') {
-	$sth = $dbh->prepare(qq{    select m.`codice`, g.`negozio`, sum(g.`giacenza`) `giacenza`
-                                from db_sm.magazzino as m join db_sm.giacenze as g on m.`codice`=g.`codice`
-                                where m.`linea` like 'SAMSUNG%' and g.`data`= ? and g.`negozio` not in ('SMMD') and
-								m.`codice` not in ('0560440','0560459','0560468','0619218','0560477','0560486','0560495','0575504','0575513')
-                                group by 1,2
-                                order by 1,2}
+	$sth = $dbh->prepare(qq{    select g.codice, g.negozio, g.giacenza from db_sm.giacenze as g join (select g.`codice`, g.`negozio`, max(g.`data`) `data` 
+								from db_sm.magazzino as m join db_sm.giacenze as g on m.`codice`=g.`codice` 
+								where m.`linea` like 'SAMSUNG%' and g.data <= ? and g.negozio not in ('SMBB','SMMD') and m.`codice` not in ('0560440','0560459','0560468','0619218','0560477','0560486','0560495','0575504','0575513')
+								group by 1,2) as d on g.codice=d.codice and g.negozio=d.negozio and g.data=d.data
+								order by g.codice, lpad(SUBSTR(g.negozio,3),2,'0')}
                             );
 	
     # giacenze alla fine della settimana precedente
