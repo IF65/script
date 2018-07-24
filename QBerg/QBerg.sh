@@ -22,7 +22,7 @@ mkdir -p $OUT
 mkdir -p $IN
 mkdir -p $SENT
 
-perl /script/QBerg/qberg.pl 
+perl /script/QBerg/qberg.pl
 
 ftp -in $IP <<SCRIPT 1>/dev/null 2>&1
 	user $USER $PW

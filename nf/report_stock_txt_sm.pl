@@ -24,12 +24,12 @@ my $current_date 	= DateTime->now(time_zone=>'local');
 my $week = $current_date->week_number() - 1;
 my $year = $current_date->year();
 
-my $weekFirstDay = DateTime->today(time_zone=>'local')->truncate(to => "week")->subtract(days => 1)->truncate(to => "week")->ymd('-');
-my $weekLastDay = DateTime->today(time_zone=>'local')->truncate(to => "week")->subtract(days => 1)->ymd('-');
-my $monthFirstDay = DateTime->today(time_zone=>'local')->truncate(to => "month")->ymd('-');
-my $previousMonthFirstDay = DateTime->today(time_zone=>'local')->truncate(to => "month")->subtract(days => 1)->truncate(to => "month")->ymd('-');
-my $previousMonthLastDay = DateTime->today(time_zone=>'local')->truncate(to => "month")->subtract(days => 1)->ymd('-');
-my ($weekYear, $weekNumber) = DateTime->today(time_zone=>'local')->truncate(to => "week")->subtract(days => 1)->week();
+my $weekFirstDay = $current_date->clone()->truncate(to => "week")->subtract(days => 1)->truncate(to => "week")->ymd('-');
+my $weekLastDay = $current_date->clone()->truncate(to => "week")->subtract(days => 1)->ymd('-');
+my $monthFirstDay = $current_date->clone()->truncate(to => "month")->ymd('-');
+my $previousMonthFirstDay = $current_date->clone()->truncate(to => "month")->subtract(days => 1)->truncate(to => "month")->ymd('-');
+my $previousMonthLastDay = $current_date->clone()->truncate(to => "month")->subtract(days => 1)->ymd('-');
+my ($weekYear, $weekNumber) = $current_date->clone()->truncate(to => "week")->subtract(days => 1)->week();
 
 # variabili globali
 #------------------------------------------------------------------------------------------------------------

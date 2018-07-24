@@ -401,7 +401,7 @@ sub ConnessioneDB {
 									(((t.`giacenza`> 1 or t.`inOrdine`> 0) and t.`canale` = 1 and t.`ordinabile` = 1) or (t.`codice` in (select distinct p.`codiceArticolo` from politicaVendita as p where p.`categoria`= ? and p.`codiceArticolo`<>''))) or
 									(t.`codice` in (select codice from articoliObbligatori))
 								)
-								and t.`doppioNetto`<>0 and t.`marchio` not in ('ASK','BSE','CLL','EXT','GOP','LIE','LOE','MIE','NRD','NTM','SBS','SNS','TRB','EAS','MEP','CAO','BLC','VIT','FAB','ACT','ADI','APO','AQL','ASF','ATT','BKB','BLC','BLR','BLJ','BNM','BOC','BPO','CEL','WEB','WAR','WAM','FOX','NTA') and t.`marchioCopre` not in ('MIELE') and t.`doppioNetto`>= 5.00 and c.`data` = (select max(data) from tabulatoCliente where codiceCliente = ?)  and
+								and t.`doppioNetto`<>0 and t.`marchio` not in ('CLL','EXT','LIE','LOE','MIE','NRD','NTM','SBS','EAS','MEP','CAO','BLC','VIT','FAB','ACT','ADI','APO','AQL','ASF','ATT','BKB','BLC','BLR','BLJ','BPO','CEL','WEB','WAR','WAM','FOX','NTA') and t.`marchioCopre` not in ('MIELE') and t.`doppioNetto`>= 5.00 and c.`data` = (select max(data) from tabulatoCliente where codiceCliente = ?)  and
 								t.`codice` <> '0702725087' and t.`codice` <> '0205764016' and t.`codice` <> '0212764005' and t.`codice` <> '0910762009' and t.`codice` <> '0208725002' and t.`codice` <> '0702725075' and t.`codice` <> '0702725088' and t.`codice` <> '0205725004' and t.`codice` <> '0205725008' and t.`codice` <> '4277251195' and t.`codice` <> '2212102014' and t.`codice` <> '2210102021' and t.`codice` <> '1305147003' and t.`codice` <> '0205253127' 
 								order by 1;
 							});

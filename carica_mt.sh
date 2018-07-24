@@ -44,7 +44,7 @@ for f in $LISTA_FILE; do
 done
 
 cd $DA_CARICARE
-LISTA_CARTELLE=$(ls -d * | sort -t "/" -k 1)
+LISTA_CARTELLE=$(ls -d * 2>/dev/null | sort -t "/" -k 1)
 for d in $LISTA_CARTELLE; do
 	cd $DA_CARICARE/$d
 	LISTA_FILE=$(ls -1 web*)

@@ -119,6 +119,20 @@ if ($selettore_report eq 'KASPERSKY') {
 								from db_sm.situazioni as s left join db_sm.magazzino as m on m.`codice`=s.`codice_articolo` 
 								join archivi.negozi as n on n.codice_interno = s.`negozio` 
 								where m.`linea` = 'WIKO TEL' and (s.`venduto_7`>0 or s.`giacenza`>0) and (s.`negozio` <> 'SMM1' and s.`negozio` <> 'SMM3' and s.`negozio` <> 'SMMD')});
+} elsif ($selettore_report eq 'REPORTER') {
+	$sth = $dbh->prepare(qq{	select concat(s.`negozio`, ' - ', n.negozio_descrizione), m.`codice`, 
+								ifnull((select `ean` from db_sm.ean where `codice`=m.`codice` order by `ean` limit 1),''), 
+								m.`descrizione`, m.`modello`, m.`linea`, s.`giacenza`, s.`venduto_7` 
+								from db_sm.situazioni as s left join db_sm.magazzino as m on m.`codice`=s.`codice_articolo` 
+								join archivi.negozi as n on n.codice_interno = s.`negozio` 
+								where m.`linea` in ('REPORTER CAM ACC','REPORTER FOTO ACC') and (s.`venduto_7`>0 or s.`giacenza`>0) and (s.`negozio` <> 'SMM1' and s.`negozio` <> 'SMM3' and s.`negozio` <> 'SMMD')});
+} elsif ($selettore_report eq 'FRITZ') {
+	$sth = $dbh->prepare(qq{	select concat(s.`negozio`, ' - ', n.negozio_descrizione), m.`codice`, 
+								ifnull((select `ean` from db_sm.ean where `codice`=m.`codice` order by `ean` limit 1),''), 
+								m.`descrizione`, m.`modello`, m.`linea`, s.`giacenza`, s.`venduto_7` 
+								from db_sm.situazioni as s left join db_sm.magazzino as m on m.`codice`=s.`codice_articolo` 
+								join archivi.negozi as n on n.codice_interno = s.`negozio` 
+								where m.`linea` = 'AVM FRITZ' and (s.`venduto_7`>0 or s.`giacenza`>0) and (s.`negozio` <> 'SMM1' and s.`negozio` <> 'SMM3' and s.`negozio` <> 'SMMD')});
 } else {
 	die "Report $selettore_report non definito\n";
 }

@@ -12,7 +12,7 @@ use File::HomeDir;
 my $desktop  = File::HomeDir->my_desktop;
 
 my $imap = Mail::IMAPClient->new( 
-        Server => "10.11.14.234",
+        Server => "10.11.14.233",
         User => 'marco.gnecchi@supermedia.it',
         password => "MGnecchi1", 
         Port => 143, 

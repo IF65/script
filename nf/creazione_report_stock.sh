@@ -159,7 +159,7 @@ then
 fi
 rm -f $FILE_NAME
 
-ADDRESS="mrossi@pardgroup.com, maupac@microsoft.com, sergio.guidi@supermedia.it, marco.gnecchi@if65.it"
+ADDRESS="francesco.ausania@microsoft.com, sergio.guidi@supermedia.it, marco.gnecchi@if65.it"
 SELETTORE="MICROSOFT"
 FILE_NAME=$(perl /script/nf/report_stock_sm.pl -s $SELETTORE)
 if [ -s $FILE_NAME ]  
@@ -280,6 +280,32 @@ rm -f $FILE_NAME
 
 ADDRESS="jsama@wikomobile.com, gbellezze@wikomobile.com, chiara.spinelli@ingrammicro.com, ccolafrancesco@wikomobile.com, imari@wikomobile.com, sergio.guidi@supermedia.it, marco.gnecchi@if65.it"
 SELETTORE="WIKO"
+FILE_NAME=$(perl /script/nf/report_stock_e_vendite_sm.pl -s $SELETTORE)
+if [ -s $FILE_NAME ]  
+then  
+ 	BODY="<html><body>\n<b>REPORT STOCK $SELETTORE<BR>\n"
+ 	SUBJECT="Report Stock $SELETTORE"
+ 	
+ 	cd /
+ 	/sendEmail-v1.56/sendEmail -o tls=no -u $SUBJECT -m $BODY -f edp@if65.it -t $ADDRESS -s 10.11.14.234:25 -a $FILE_NAME
+fi
+rm -f $FILE_NAME
+
+ADDRESS="a.ardrizzi@reporteritalia.it, sergio.guidi@supermedia.it, marco.gnecchi@if65.it"
+SELETTORE="REPORTER"
+FILE_NAME=$(perl /script/nf/report_stock_e_vendite_sm.pl -s $SELETTORE)
+if [ -s $FILE_NAME ]  
+then  
+ 	BODY="<html><body>\n<b>REPORT STOCK $SELETTORE<BR>\n"
+ 	SUBJECT="Report Stock $SELETTORE"
+ 	
+ 	cd /
+ 	/sendEmail-v1.56/sendEmail -o tls=no -u $SUBJECT -m $BODY -f edp@if65.it -t $ADDRESS -s 10.11.14.234:25 -a $FILE_NAME
+fi
+rm -f $FILE_NAME
+
+ADDRESS="report@avm.de, r.mueller@avm.de, d.rosella@avm.de, sergio.guidi@supermedia.it, marco.gnecchi@if65.it"
+SELETTORE="FRITZ"
 FILE_NAME=$(perl /script/nf/report_stock_e_vendite_sm.pl -s $SELETTORE)
 if [ -s $FILE_NAME ]  
 then  
