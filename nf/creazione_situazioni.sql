@@ -1,13 +1,10 @@
-/*
-ora viene creta dal ricalolo 
-
 drop table if exists db_sm.giacenze_correnti;
 
-create table db_sm.giacenze_correnti as 
-select g.codice, g.negozio, ifnull(g.giacenza,0) `giacenza` 
-from (select negozio, max(data) as `data` from db_sm.giacenze group by 1) as d join db_sm.giacenze as g on g.data = d.data and g.negozio = d.negozio
-order by 1,2;
-alter table db_sm.giacenze_correnti add primary key(codice,negozio);*/
+create table db_sm.giacenze_correnti as
+select g.codice, g.negozio, ifnull(g.giacenza,0) `giacenza`  from db_sm.giacenze as g join (select g.`codice`, g.`negozio`, max(g.`data`) `data` 
+from db_sm.giacenze as g where g.anno = 2018 group by 1,2) as d on g.codice=d.codice and g.negozio=d.negozio and g.data=d.data
+order by g.codice, lpad(SUBSTR(g.negozio,3),2,'0');
+alter table db_sm.giacenze_correnti add primary key(codice,negozio);
 
 drop table if exists `db_sm`.ordini_righe_arrivi;
 

@@ -77,7 +77,7 @@
                 $csv .= $record['negozio']."\t";
                 $csv .= $record['bloccato']."\t";
                 $csv .= ($record['dataBlocco'] == null) ? 'NULL'."\t" : $record['dataBlocco']."\t";
-                $csv .= $record['numbolla']."\t";
+                $csv .= $record['numBolla']."\t";
                 $csv .= $record['prezzoOfferta']."\t";
                 $csv .= ($record['dataFineOfferta'] == null) ? 'NULL'."\t" : $record['dataFineOfferta']."\t";
                 $csv .= $record['prezzoVendita']."\t";
@@ -96,14 +96,26 @@
             	$dataFinale = $query["query"]["dataFinale"];
             	$negozio = $query["query"]["negozio"];
             	$codice = $query["query"]["codice"];
-            	$numbolla = $query["query"]["numbolla"];
+            	$numBolla = $query["query"]["numBolla"];
             	$inizio = $query["inizio"];
             	$lunghezza = $query["lunghezza"];
             	$colonne = $query["colonne"];
-            	$ordinamento = $query["ordinamento"NumBolla];
+            	$ordinamento = $query["ordinamento"];
 
 				if ($dataIniziale != $dataFinale and preg_match("/^\d{7}$/",$codice)) {
-					$sql = "select SQL_CALC_FOUND_ROWS a.* from bollegen as a where a.`BG-SOCNEG`= :negozio and a.`BG-DATBOLLA`>=:dataIniziale and a.`BG-DATBOLLA`<=:dataFinale and a.`BG-CODCIN`=:codice and a.`BG-NBOLLA`=:NumBolla";
+					$sql = "select SQL_CALC_FOUND_ROWS 
+					`BG-DATBOLLA` DATBOLLA,
+					`BG-CODCIN` CODCIN,
+					`BG-QTA` QTA,
+					`BG-SOCNEG` SOCNEG, 
+					`BG-NBOLLA` NBOLLA 
+					from bollegen as a 
+					where a.`BG-SOCNEG`=:negozio 
+					and DATE_FORMAT(a.`BG-DATBOLLA`, \"%Y-%m-%d\")>=:dataIniziale 
+					and DATE_FORMAT(a.`BG-DATBOLLA`, \"%Y-%m-%d\")<=:dataFinale 
+					and a.`BG-CODCIN`=:codice 
+					and ((a.`BG-NBOLLA`=:numBolla)
+					or	(:numBolla=''))";
 
 					if (count($ordinamento)) {
 						$sqlOrdinamento = array();
@@ -117,15 +129,19 @@
 					}
 
 					$stmt = $this->pdo->prepare($sql);
-					$stmt->execute( array(":dataIniziale" => $dataIniziale,":dataFinale" => $dataFinale,":negozio" => $negozio, ":codice" => $codice) );
+					$stmt->execute( array(":dataIniziale" => $dataIniziale,":dataFinale" => $dataFinale,":negozio" => $negozio, ":codice" => $codice, ":numBolla" => $numBolla) );
 				} else {
 					$sql = "select SQL_CALC_FOUND_ROWS a.*
 							from (
-									select  a.`BG-SOCNEG`,a.`BG-CODCIN`,max(a.`BG-DATBOLLA`) `data`
+									select  a.`BG-SOCNEG`,a.`BG-CODCIN`,max(a.`BG-DATBOLLA`) `BG-DATBOLLA`
 									from bollegen as a
 									where a.`BG-SOCNEG` = :negozio and a.`BG-DATBOLLA`<=:data
 									group by 1,2
-								) as d join bollegen as a on d.`BG-SOCNEG`=a.`BG-SOCNEG` and d.`BG-CODCIN`=a.`BG-CODCIN` and d.`BG-DATBOLLA`=a.`BG-DATBOLLA`";
+								) as d 
+								join bollegen as a 
+								on d.`BG-SOCNEG`=a.`BG-SOCNEG` 
+								and d.`BG-CODCIN`=a.`BG-CODCIN` 
+								and d.`BG-DATBOLLA`=a.`BG-DATBOLLA`";
 
 					if (preg_match("/^\d{7}$/",$codice)) {
 						$sql = "$sql\nwhere a.`BG-CODCIN`='$codice'";
@@ -149,6 +165,8 @@
                 $recordsTotali = $this->pdo->query("select FOUND_ROWS();")->fetchColumn();
 
 				return array("draw" => $draw, "recordsTotal"=>$recordsTotali*1,"recordsFiltered"=>$recordsTotali*1,"data"=>$data);
+								$nl="<br/>";
+				echo ">$nl";
 
             } catch (PDOException $e) {
                 die($e->getMessage());

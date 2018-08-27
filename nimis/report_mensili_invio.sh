@@ -6,6 +6,7 @@ ALLA_DATA=$(date -d "-$(date +%d) days -0 month" +"%Y-%m-%d")
 DALLA_DATA="${ALLA_DATA:0:4}-01-01"
 
 ADDRESS="luigi.cherubini@italmark.com,andrea.pelizzari@italmark.com,alberto.forlini@italmark.com,manfredo.pasetti@supermedia.it,antonella.gennari@if65.it,marco.gnecchi@if65.it"
+ADDRESS="luigi.cherubini@italmark.com,marco.gnecchi@if65.it"
 
 rm -f /report_pago_nimis.* 1>/dev/null 2>/dev/null
 perl /script/nimis/pago_nimis.pl $DALLA_DATA $ALLA_DATA
