@@ -236,6 +236,7 @@ sub ConnessioneDB {
     $sth_elenco_negozi = $dbh->prepare(qq{  select distinct concat(r.`RVG-CODSOC`,r.`RVG-CODNEG`)
                                             from archivi.riepvegi as r
                                             where r.`RVG-DATA` = ?
+                                            and r.`RVG-CODNEG` = '50'
                                             order by 1}
     );
     
