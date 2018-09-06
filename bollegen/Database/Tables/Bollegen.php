@@ -87,7 +87,7 @@
 
             file_put_contents ( "/bollegen/export.txt" , $csv);
         }
-
+        
 
         public function ricerca($query) {
             try {
@@ -97,25 +97,43 @@
             	$negozio = $query["query"]["negozio"];
             	$codice = $query["query"]["codice"];
             	$numBolla = $query["query"]["numBolla"];
+            	$famiglia = $query["query"]["famiglia"];
             	$inizio = $query["inizio"];
             	$lunghezza = $query["lunghezza"];
             	$colonne = $query["colonne"];
             	$ordinamento = $query["ordinamento"];
 
-				if ($dataIniziale != $dataFinale and preg_match("/^\d{7}$/",$codice)) {
+				if ($dataIniziale == $dataFinale or preg_match("/^\d{7}$/",$codice) or preg_match("/^\d{4}$/",$negozio)) {
 					$sql = "select SQL_CALC_FOUND_ROWS 
-					`BG-DATBOLLA` DATBOLLA,
-					`BG-CODCIN` CODCIN,
-					`BG-QTA` QTA,
-					`BG-SOCNEG` SOCNEG, 
-					`BG-NBOLLA` NBOLLA 
-					from bollegen as a 
-					where a.`BG-SOCNEG`=:negozio 
+					a.`BG-DATBOLLA`		DATBOLLA,
+					a.`BG-CODCIN`		CODCIN,
+					substr(d.`DESC_ARTICOLO`,1,30) DESC_ARTICOLO,
+					a.`BG-PZ` * a.`BG-QTA`  		QTA,
+					CAST((a.`BG-PVCASH-E` * a.`BG-PZ` * a.`BG-QTA`) AS DECIMAL(8,3))	`val_al_costo_cessione`, 
+					CAST((a.`BG-PVIF-E` * a.`BG-PZ` * a.`BG-QTA`) AS DECIMAL(8,2))		`val_al_vendita`, 
+					a.`BG-SOCNEG`		SOCNEG, 
+					n.`negozio_descrizione`,
+					a.`BG-NBOLLA`		NBOLLA ,
+					d.`NOME_COMPRATORE`,
+					d.`DESC_SOTTOREPARTO`,
+					d.`DESC_FAMIGLIA`
+					from bollegen as a
+					join archivi.negozi as n 
+					on a.`BG-SOCNEG` = n.`codice`
+					left join mersy_viste.anagrafica_articolo d
+					on		a.`BG-CODCIN`= d.`CODICE_ARTICOLO_BULL`
+					where ((a.`BG-SOCNEG`=:negozio)
+					or		(:negozio=''))
 					and DATE_FORMAT(a.`BG-DATBOLLA`, \"%Y-%m-%d\")>=:dataIniziale 
 					and DATE_FORMAT(a.`BG-DATBOLLA`, \"%Y-%m-%d\")<=:dataFinale 
-					and a.`BG-CODCIN`=:codice 
 					and ((a.`BG-NBOLLA`=:numBolla)
 					or	(:numBolla=''))";
+					if (preg_match("/^\d{7}$/",$codice)) {
+						$sql = "$sql\nand a.`BG-CODCIN`='$codice'";
+					}
+					if (preg_match("/^\d{3}$/",$famiglia)) {
+						$sql = "$sql\nand substr(a.`BG-CODCIN`,1,3) ='$famiglia'";
+					}
 
 					if (count($ordinamento)) {
 						$sqlOrdinamento = array();
@@ -133,15 +151,20 @@
 				} else {
 					$sql = "select SQL_CALC_FOUND_ROWS a.*
 							from (
-									select  a.`BG-SOCNEG`,a.`BG-CODCIN`,max(a.`BG-DATBOLLA`) `BG-DATBOLLA`
-									from bollegen as a
-									where a.`BG-SOCNEG` = :negozio and a.`BG-DATBOLLA`<=:data
+									select  a.`BG-SOCNEG`,
+											a.`BG-CODCIN`,
+											max(a.`BG-DATBOLLA`) `BG-DATBOLLA`
+									from	bollegen as a
+									where ((a.`BG-SOCNEG`=:negozio)
+									or		(:negozio=''))
+									and		a.`BG-DATBOLLA`<=:data
+									and a.`BG-CODCIN`=:codice 
 									group by 1,2
 								) as d 
 								join bollegen as a 
-								on d.`BG-SOCNEG`=a.`BG-SOCNEG` 
-								and d.`BG-CODCIN`=a.`BG-CODCIN` 
-								and d.`BG-DATBOLLA`=a.`BG-DATBOLLA`";
+								on	d.`BG-SOCNEG`	= a.`BG-SOCNEG` 
+								and d.`BG-CODCIN`	= a.`BG-CODCIN` 
+								and d.`BG-DATBOLLA`	= a.`BG-DATBOLLA`";
 
 					if (preg_match("/^\d{7}$/",$codice)) {
 						$sql = "$sql\nwhere a.`BG-CODCIN`='$codice'";
@@ -176,6 +199,21 @@
         public function __destruct() {
 			parent::__destruct();
         }
+        
+        public function lista_negozi() {
+			$sql = "select codice, negozio_descrizione from negozi where societa in ('00','01','04','31','36') order by codice";
+			$result = $this->pdo->prepare($sql);
+			$result->execute( array(":negozio" => $codice,":descrizione" => $negozio_descrizione) );
+		
+			$return_value = "<option selected value=\"\">TUTTI NEGOZI</option>";
+			while($row = $result->fetch_assoc()) {
+				$return_value .= "<option value=\"".$row["codice"]."\">".$row["codice"].' - '.$row["negozio_descrizione"]."</option>";
+			};
+
+		
+		return $return_value;
+		}
+	
 
     }
 ?>
